@@ -107,7 +107,7 @@ class Build : NukeBuild
                         .Add($"/TargetExecutable=\"{dotnetPath}\"")
                         .Add($"/TargetWorkingDir=\"{projectDirectory}\"")
                         .Add("/TargetArguments=\"xunit -nobuild\"")
-                        .Add("/Filters=\"+:Dangl.AVA\"")
+                        .Add("/Filters=\"+:Dangl.AspNetCore.FileHandling\"")
                         .Add("/AttributeFilters=\"System.CodeDom.Compiler.GeneratedCodeAttribute\"")
                         .Add($"/Output=\"{OutputDirectory / $"coverage{snapshotIndex:00}.snapshot"}\""));
                 ProcessTasks.StartProcess(toolSettings)
