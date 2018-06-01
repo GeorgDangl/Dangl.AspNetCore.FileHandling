@@ -3,7 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.27703.2026
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dangl.AspNetCore.FileHandling", "Dangl.AspNetCore.FileHandling\Dangl.AspNetCore.FileHandling.csproj", "{F87473C2-D42B-4FA7-A106-FBBBE648C9B2}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Dangl.AspNetCore.FileHandling", "src\Dangl.AspNetCore.FileHandling\Dangl.AspNetCore.FileHandling.csproj", "{F87473C2-D42B-4FA7-A106-FBBBE648C9B2}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{DBDC183A-4F94-4673-AE43-4CE7D20B23FA}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -18,6 +20,9 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{F87473C2-D42B-4FA7-A106-FBBBE648C9B2} = {DBDC183A-4F94-4673-AE43-4CE7D20B23FA}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {90A98B2F-A03B-4FD1-97DF-0CFCC2E86300}
