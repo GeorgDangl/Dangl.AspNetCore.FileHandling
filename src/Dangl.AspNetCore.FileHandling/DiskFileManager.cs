@@ -8,15 +8,30 @@ namespace Dangl.AspNetCore.FileHandling
     // TODO ADD EXTENSION FOR DEPENDENCY INJECTION
     // TODO ADD IN MEMORY FILE MANAGER
 
+    /// <summary>
+    /// Implementation for <see cref="IFileManager"/> which uses the disk
+    /// </summary>
     public class DiskFileManager : IFileManager
     {
         private readonly string _rootFolder;
 
+        /// <summary>
+        /// Instantiates this class with a root folder on disk
+        /// </summary>
+        /// <param name="rootFolder"></param>
         public DiskFileManager(string rootFolder)
         {
             _rootFolder = rootFolder ?? throw new ArgumentNullException(nameof(rootFolder));
         }
 
+        /// <summary>
+        /// Will return the file on disk or a failed repository result for errors or if the file
+        /// can not be found
+        /// </summary>
+        /// <param name="fileId"></param>
+        /// <param name="container"></param>
+        /// <param name="fileName"></param>
+        /// <returns></returns>
         public Task<RepositoryResult<Stream>> GetFileAsync(Guid fileId, string container, string fileName)
         {
             var fileSavePath = GetFilePath(fileId, container, fileName);
@@ -30,7 +45,6 @@ namespace Dangl.AspNetCore.FileHandling
 
                 var fileStream = File.Open(fileSavePath, FileMode.Open);
 
-
                 return Task.FromResult(RepositoryResult<Stream>.Success(fileStream));
             }
             catch (Exception e)
@@ -39,6 +53,15 @@ namespace Dangl.AspNetCore.FileHandling
             }
         }
 
+        /// <summary>
+        /// Will save the file on disk, relative to the root folder in a folder
+        /// matching the container name
+        /// </summary>
+        /// <param name="fileId"></param>
+        /// <param name="container"></param>
+        /// <param name="fileName"></param>
+        /// <param name="fileStream"></param>
+        /// <returns></returns>
         public async Task<RepositoryResult> SaveFileAsync(Guid fileId, string container, string fileName, Stream fileStream)
         {
             var fileSavePath = GetFilePath(fileId, container, fileName);
@@ -53,7 +76,7 @@ namespace Dangl.AspNetCore.FileHandling
 
                 using (var fs = File.Create(fileSavePath))
                 {
-                    await fileStream.CopyToAsync(fs);
+                    await fileStream.CopyToAsync(fs).ConfigureAwait(false);
                 }
 
                 return RepositoryResult.Success();

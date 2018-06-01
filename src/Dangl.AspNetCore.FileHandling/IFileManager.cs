@@ -5,12 +5,23 @@ using System.Threading.Tasks;
 
 namespace Dangl.AspNetCore.FileHandling
 {
+    /// <summary>
+    /// Interface for file handling
+    /// </summary>
     public interface IFileManager
     {
+        /// <summary>
+        /// Will return the file or a failed repository result for errors or if the file
+        /// can not be found
+        /// </summary>
+        /// <param name="fileId"></param>
+        /// <param name="container"></param>
+        /// <param name="fileName"></param>
+        /// <returns></returns>
         Task<RepositoryResult<Stream>> GetFileAsync(Guid fileId, string container, string fileName);
 
         /// <summary>
-        /// 
+        /// Saves a file
         /// </summary>
         /// <param name="fileId"></param>
         /// <param name="container">
