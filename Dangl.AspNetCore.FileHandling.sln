@@ -3,6 +3,8 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.27703.2026
 MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = ".build", "build\.build.csproj", "{D6D8605E-62A1-4D53-ADB0-A9FF56E89620}"
+EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Dangl.AspNetCore.FileHandling", "src\Dangl.AspNetCore.FileHandling\Dangl.AspNetCore.FileHandling.csproj", "{F87473C2-D42B-4FA7-A106-FBBBE648C9B2}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{DBDC183A-4F94-4673-AE43-4CE7D20B23FA}"
@@ -13,6 +15,8 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{D6D8605E-62A1-4D53-ADB0-A9FF56E89620}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D6D8605E-62A1-4D53-ADB0-A9FF56E89620}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F87473C2-D42B-4FA7-A106-FBBBE648C9B2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{F87473C2-D42B-4FA7-A106-FBBBE648C9B2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F87473C2-D42B-4FA7-A106-FBBBE648C9B2}.Release|Any CPU.ActiveCfg = Release|Any CPU
