@@ -5,8 +5,6 @@ using System.Threading.Tasks;
 
 namespace Dangl.AspNetCore.FileHandling
 {
-    // TODO ADD EXTENSION FOR DEPENDENCY INJECTION
-
     /// <summary>
     /// Implementation for <see cref="IFileManager"/> which uses the disk
     /// </summary>
