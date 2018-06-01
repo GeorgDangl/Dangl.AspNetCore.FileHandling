@@ -9,6 +9,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Dangl.AspNetCore.FileHandli
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{DBDC183A-4F94-4673-AE43-4CE7D20B23FA}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{19E0CFA4-1824-4C6E-9F86-347209C461A8}"
+	ProjectSection(SolutionItems) = preProject
+		CHANGELOG.md = CHANGELOG.md
+	EndProjectSection
+EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{5C3E0BA4-8E00-43B7-BE49-9ED4D8C4E717}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dangl.AspNetCore.FileHandling.Tests", "test\Dangl.AspNetCore.FileHandling.Tests\Dangl.AspNetCore.FileHandling.Tests.csproj", "{9218807C-8CA0-4C07-BAE9-1ACDA7AD8DE7}"
