@@ -3,6 +3,10 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <Authors>Georg Dangl</Authors>
+    <Copyright>(c) $([System.DateTime]::Now.Year) Georg Dangl</Copyright>
+    <PackageProjectUrl>https://docs.dangl-it.com/Projects/Dangl.AspNetCore.FileHandling</PackageProjectUrl>
+    <PackageIconUrl>https://blog.dangl.me/media/1114/gd_icon_256.png</PackageIconUrl>
   </PropertyGroup>
 
   <ItemGroup>
