@@ -10,6 +10,8 @@ The **Dangl.AspNetCore.FileHandling** package offers reusable tasks for web proj
 
 ## Features
 
+The `FileHandlerDefaults` defaults limits to adhere to when using file and container names. It is enforced to ensure a compatibility with Azure blob storage.
+
 ### StringExtensions
 
 The `StringExtensions` class has a static extension method `string WithMaxLength(this string value, int maxLength)`.
