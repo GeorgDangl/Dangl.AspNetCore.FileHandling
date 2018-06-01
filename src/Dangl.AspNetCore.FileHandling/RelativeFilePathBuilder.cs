@@ -30,8 +30,7 @@ namespace Dangl.AspNetCore.FileHandling
 
         private static bool ContainerNameIsValid(string container)
         {
-            var containerNameRegex = "^[a-z-]+$";
-            var isValid = Regex.IsMatch(container, containerNameRegex, RegexOptions.Compiled);
+            var isValid = Regex.IsMatch(container, FileHandlerDefaults.FILE_CONTAINER_NAME_ALLOWED_REGEX, RegexOptions.Compiled);
             return isValid
                    && container.Length <= FileHandlerDefaults.FILE_CONTAINER_NAME_MAX_LENGTH
                    && container.Length >= FileHandlerDefaults.FILE_CONTAINER_NAME_MIN_LENGTH;
