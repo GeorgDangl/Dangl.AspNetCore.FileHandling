@@ -12,7 +12,9 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{19E0CFA4-1824-4C6E-9F86-347209C461A8}"
 	ProjectSection(SolutionItems) = preProject
 		CHANGELOG.md = CHANGELOG.md
+		docfx.json = docfx.json
 		GitVersion.yml = GitVersion.yml
+		toc.yml = toc.yml
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{5C3E0BA4-8E00-43B7-BE49-9ED4D8C4E717}"
