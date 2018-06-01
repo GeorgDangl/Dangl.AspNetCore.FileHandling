@@ -7,3 +7,9 @@
 [Changelog](./CHANGELOG.md)
 
 The **Dangl.AspNetCore.FileHandling** package offers reusable tasks for web project that deal with file I/O, for example disk or Azure Blob storage access.
+
+## Features
+
+### StringExtensions
+
+The `StringExtensions` class has a static extension method `string WithMaxLength(this string value, int maxLength)`.
