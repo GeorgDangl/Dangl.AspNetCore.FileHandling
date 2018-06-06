@@ -96,6 +96,7 @@ class Build : NukeBuild
             for (var i = 0; i < testProjects.Count; i++)
             {
                 var testProject = testProjects[i];
+                var projectName = Path.GetFileNameWithoutExtension(testProject);
 
                 /* DotCover */
                 var projectDirectory = Path.GetDirectoryName(testProject);
@@ -107,7 +108,7 @@ class Build : NukeBuild
                         .Add("cover")
                         .Add($"/TargetExecutable=\"{dotnetPath}\"")
                         .Add($"/TargetWorkingDir=\"{projectDirectory}\"")
-                        .Add("/TargetArguments=\"xunit -nobuild\"")
+                        .Add($"/TargetArguments=\"xunit -nobuild \\\"-xml {OutputDirectory / projectName}_testresults.xml\\\"\"")
                         .Add("/Filters=\"+:Dangl.AspNetCore.FileHandling\"")
                         .Add("/AttributeFilters=\"System.CodeDom.Compiler.GeneratedCodeAttribute\"")
                         .Add($"/Output=\"{OutputDirectory / $"coverage{snapshotIndex:00}.snapshot"}\""));
