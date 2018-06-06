@@ -35,11 +35,12 @@ class Build : NukeBuild
 
     [GitRepository] readonly GitRepository GitRepository;
 
-    [Parameter] string ProGetSource;
-    [Parameter] string ProGetApiKey;
+    [Parameter] string MyGetSource;
+    [Parameter] string MyGetApiKey;
     [Parameter] string DocuApiKey;
     [Parameter] string DocuApiEndpoint;
     [Parameter] string GitHubAuthenticationToken;
+    [Parameter] string NuGetApiKey;
 
     string DocFxFile => SolutionDirectory / "docfx.json";
     string ChangeLogFile => RootDirectory / "CHANGELOG.md";
@@ -95,6 +96,7 @@ class Build : NukeBuild
             for (var i = 0; i < testProjects.Count; i++)
             {
                 var testProject = testProjects[i];
+                var projectName = Path.GetFileNameWithoutExtension(testProject);
 
                 /* DotCover */
                 var projectDirectory = Path.GetDirectoryName(testProject);
@@ -106,7 +108,7 @@ class Build : NukeBuild
                         .Add("cover")
                         .Add($"/TargetExecutable=\"{dotnetPath}\"")
                         .Add($"/TargetWorkingDir=\"{projectDirectory}\"")
-                        .Add("/TargetArguments=\"xunit -nobuild\"")
+                        .Add($"/TargetArguments=\"xunit -nobuild \\\"-xml {OutputDirectory / projectName}_testresults.xml\\\"\"")
                         .Add("/Filters=\"+:Dangl.AspNetCore.FileHandling\"")
                         .Add("/AttributeFilters=\"System.CodeDom.Compiler.GeneratedCodeAttribute\"")
                         .Add($"/Output=\"{OutputDirectory / $"coverage{snapshotIndex:00}.snapshot"}\""));
@@ -160,8 +162,9 @@ class Build : NukeBuild
 
     Target Push => _ => _
         .DependsOn(Pack)
-        .Requires(() => ProGetSource)
-        .Requires(() => ProGetApiKey)
+        .Requires(() => MyGetSource)
+        .Requires(() => MyGetApiKey)
+        .Requires(() => NuGetApiKey)
         .Requires(() => Configuration.EqualsOrdinalIgnoreCase("Release"))
         .Executes(() =>
         {
@@ -173,8 +176,19 @@ class Build : NukeBuild
                         // Need to set it here, otherwise it takes the one from NUKEs .tmp directory
                         .SetToolPath(ToolPathResolver.GetPathExecutable("dotnet"))
                         .SetTargetPath(x)
-                        .SetSource(ProGetSource)
-                        .SetApiKey(ProGetApiKey));
+                        .SetSource(MyGetSource)
+                        .SetApiKey(MyGetApiKey));
+
+                    if (GitVersion.BranchName.Equals("master") || GitVersion.BranchName.Equals("origin/master"))
+                    {
+                        // Stable releases are publish to NuGet
+                        DotNetNuGetPush(s => s
+                            // Need to set it here, otherwise it takes the one from NUKEs .tmp directory
+                            .SetToolPath(ToolPathResolver.GetPathExecutable("dotnet"))
+                            .SetTargetPath(x)
+                            .SetSource("https://api.nuget.org/v3/index.json")
+                            .SetApiKey(NuGetApiKey));
+                    }
                 });
         });
 
