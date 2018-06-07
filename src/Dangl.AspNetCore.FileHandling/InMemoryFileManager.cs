@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Threading.Tasks;
 using Dangl.Data.Shared;
 
@@ -15,14 +14,17 @@ namespace Dangl.AspNetCore.FileHandling
         /// <summary>
         /// Gives access to all cached files
         /// </summary>
-        public static List<InMemorySavedFile> SavedFiles { get; } = new List<InMemorySavedFile>();
+        public static IReadOnlyList<InMemorySavedFile> SavedFiles => _savedFiles.AsReadOnly();
+        private static List<InMemorySavedFile> _savedFiles = new List<InMemorySavedFile>();
+
 
         /// <summary>
         /// Removes all cached files
         /// </summary>
         public static void ClearFiles()
         {
-            SavedFiles.Clear();
+            _savedFiles.ForEach(s => s.FileStream.Dispose());
+            _savedFiles.Clear();
         }
 
         /// <summary>
@@ -34,7 +36,7 @@ namespace Dangl.AspNetCore.FileHandling
         /// <returns></returns>
         public Task<RepositoryResult<Stream>> GetFileAsync(Guid fileId, string container, string fileName)
         {
-            var file = SavedFiles
+            var file = _savedFiles
                 .Find(f => f.FileId == fileId
                     && f.Container == container
                     && f.FileName == fileName);
@@ -55,17 +57,22 @@ namespace Dangl.AspNetCore.FileHandling
         /// <param name="fileName"></param>
         /// <param name="fileStream"></param>
         /// <returns></returns>
-        public Task<RepositoryResult> SaveFileAsync(Guid fileId, string container, string fileName, Stream fileStream)
+        public async Task<RepositoryResult> SaveFileAsync(Guid fileId, string container, string fileName, Stream fileStream)
         {
-            SavedFiles.Add(new InMemorySavedFile
+            // Copying it internally because the original stream is likely to be disposed
+            var copiedMemoryStream = new MemoryStream();
+            await fileStream.CopyToAsync(copiedMemoryStream);
+            copiedMemoryStream.Position = 0;
+
+            _savedFiles.Add(new InMemorySavedFile
             {
                 FileId = fileId,
                 Container = container,
                 FileName = fileName,
-                FileStream = fileStream
+                FileStream = copiedMemoryStream
             });
 
-            return Task.FromResult(RepositoryResult.Success());
+            return RepositoryResult.Success();
         }
     }
 }
