@@ -1,6 +1,7 @@
 # Dangl.AspNetCore.FileHandling
 
-[![Build Status](https://jenkins.dangl.me/buildStatus/icon?job=Dangl.AspNetCore.FileHandling.Tests)](https://jenkins.dangl.me/job/Dangl.AspNetCore.FileHandling.Tests/)
+[![Build Status](https://jenkins.dangl.me/buildStatus/icon?job=Dangl.AspNetCore.FileHandling/develop)](https://jenkins.dangl.me/job/Dangl.AspNetCore.FileHandling/)
+[![Built with Nuke](http://nuke.build/rounded)](https://www.nuke.build)
 
 [Link to documentation](https://docs.dangl-it.com/Projects/Dangl.AspNetCore.FileHandling)
 
@@ -23,6 +24,11 @@ The `DiskFileHandler` works by storing files on a disk drive.
 ### InMemoryFileHandler
 
 For test purposes, the `InMemoryFileHandler` offers additional features like `ClearFiles()` to reset all saved files and a property `SavedFiles` to access all saved files.
+
+### AzureBlobFileManager
+
+This implementation works against Azure Blob Storage. Additionally, it has a `Task<RepositoryResult> EnsureContainerCreated(string container)` for initialization purposes.
+Azure Blob containers must be created before they can be accessed.
 
 ### StringExtensions
 

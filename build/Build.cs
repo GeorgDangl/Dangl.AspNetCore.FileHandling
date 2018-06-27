@@ -181,7 +181,7 @@ class Build : NukeBuild
 
                     if (GitVersion.BranchName.Equals("master") || GitVersion.BranchName.Equals("origin/master"))
                     {
-                        // Stable releases are publish to NuGet
+                        // Stable releases are published to NuGet
                         DotNetNuGetPush(s => s
                             // Need to set it here, otherwise it takes the one from NUKEs .tmp directory
                             .SetToolPath(ToolPathResolver.GetPathExecutable("dotnet"))
