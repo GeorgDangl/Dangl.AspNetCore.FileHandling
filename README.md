@@ -25,6 +25,11 @@ The `DiskFileHandler` works by storing files on a disk drive.
 
 For test purposes, the `InMemoryFileHandler` offers additional features like `ClearFiles()` to reset all saved files and a property `SavedFiles` to access all saved files.
 
+### AzureBlobFileManager
+
+This implementation works against Azure Blob Storage. Additionally, it has a `Task<RepositoryResult> EnsureContainerCreated(string container)` for initialization purposes.
+Azure Blob containers must be created before they can be accessed.
+
 ### StringExtensions
 
 The `StringExtensions` class has a static extension method `string WithMaxLength(this string value, int maxLength)`.
