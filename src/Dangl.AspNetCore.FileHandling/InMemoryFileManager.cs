@@ -74,5 +74,31 @@ namespace Dangl.AspNetCore.FileHandling
 
             return RepositoryResult.Success();
         }
+
+        /// <summary>
+        /// Caches a file to memory
+        /// </summary>
+        /// <param name="fileDate"></param>
+        /// <param name="container"></param>
+        /// <param name="fileName"></param>
+        /// <param name="fileStream"></param>
+        /// <returns></returns>
+        public async Task<RepositoryResult> SaveFileAsync(DateTime fileDate, string container, string fileName, Stream fileStream)
+        {
+            // Copying it internally because the original stream is likely to be disposed
+            var copiedMemoryStream = new MemoryStream();
+            await fileStream.CopyToAsync(copiedMemoryStream);
+            copiedMemoryStream.Position = 0;
+
+            _savedFiles.Add(new InMemorySavedFile
+            {
+                FileId = Guid.NewGuid(),
+                Container = container,
+                FileName = fileName,
+                FileStream = copiedMemoryStream
+            });
+
+            return RepositoryResult.Success();
+        }
     }
 }

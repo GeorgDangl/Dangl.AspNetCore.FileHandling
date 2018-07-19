@@ -56,9 +56,32 @@ namespace Dangl.AspNetCore.FileHandling.Azure
         /// <param name="fileName"></param>
         /// <param name="fileStream"></param>
         /// <returns></returns>
-        public async Task<RepositoryResult> SaveFileAsync(Guid fileId, string container, string fileName, Stream fileStream)
+        public Task<RepositoryResult> SaveFileAsync(Guid fileId, string container, string fileName, Stream fileStream)
         {
             var blobReference = GetBlobReference(fileId, container, fileName);
+            return UploadBlobReference(blobReference, fileStream);
+        }
+
+        /// <summary>
+        /// Saves a file in a date-hierarchical format, e.g. to {container}/2018/07/19/14/2018-07-19-14-33-32_filename.ext
+        /// </summary>
+        /// <param name="fileDate"></param>
+        /// <param name="container">
+        /// The container name must be at least 3 characters long and at maximum 63 characters long.
+        /// It can only consist of lowercase alphanumeric characters and the '-' (dash) character. This is to enforce
+        /// compatibility with Azure blob storage, if a later migration is performed to Azure.
+        /// </param>
+        /// <param name="fileName"></param>
+        /// <param name="fileStream"></param>
+        /// <returns></returns>
+        public Task<RepositoryResult> SaveFileAsync(DateTime fileDate, string container, string fileName, Stream fileStream)
+        {
+            var blobReference = GetTimeStampedBlobReference(fileDate, container, fileName);
+            return UploadBlobReference(blobReference, fileStream);
+        }
+
+        private async Task<RepositoryResult> UploadBlobReference(CloudBlockBlob blobReference, Stream fileStream)
+        {
             try
             {
                 await blobReference.UploadFromStreamAsync(fileStream);
@@ -86,6 +109,13 @@ namespace Dangl.AspNetCore.FileHandling.Azure
         {
             var filePath = $"{fileId.ToString().ToLowerInvariant()}_{fileName}"
                     .WithMaxLength(FileHandlerDefaults.FILE_PATH_MAX_LENGTH);
+            var containerReference = _blobClient.GetContainerReference(container);
+            return containerReference.GetBlockBlobReference(filePath);
+        }
+
+        private CloudBlockBlob GetTimeStampedBlobReference(DateTime fileDate, string container, string fileName)
+        {
+            var filePath = TimeStampedFilePathBuilder.GetTimeStampedFilePath(fileDate, fileName);
             var containerReference = _blobClient.GetContainerReference(container);
             return containerReference.GetBlockBlobReference(filePath);
         }

@@ -2,6 +2,9 @@
 
 All notable changes to **Dangl.AspNetCore.FileHandling** are documented here.
 
+## v0.1.5:
+- Add option to save timestamped files in a hierarchical structure
+
 ## v0.1.4:
 - Add package `Dangl.AspNetCore.FileHandling.Azure`
 
