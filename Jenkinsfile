@@ -6,12 +6,9 @@ pipeline {
         }
     }
     environment {
-        MyGetSource = credentials('MyGetPushSource')
-        MyGetApiKey = credentials('MyGetApiKey')
-        DocuApiKey = credentials('Dangl.AspNetCore.FileHandling.Docu_ApiKey')
-        DocuApiEndpoint = credentials('docu_api_upload_endpoint')
-        GitHubAuthenticationToken = credentials('GitHubAuthenticationToken')
-        NuGetApiKey = credentials('NuGetApiKey')
+        KeyVaultBaseUrl = credentials('AzureCiKeyVaultBaseUrl')
+        KeyVaultClientId = credentials('AzureCiKeyVaultClientId')
+        KeyVaultClientSecret = credentials('AzureCiKeyVaultClientSecret')
     }
     stages {
         stage ('Test') {
