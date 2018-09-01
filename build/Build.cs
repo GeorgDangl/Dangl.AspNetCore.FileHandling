@@ -24,10 +24,6 @@ using Nuke.WebDocu;
 using static Nuke.WebDocu.WebDocuTasks;
 using Nuke.Azure.KeyVault;
 
-[KeyVaultSettings(
-    VaultBaseUrlParameterName = nameof(KeyVaultBaseUrl),
-    ClientIdParameterName = nameof(KeyVaultClientId),
-    ClientSecretParameterName = nameof(KeyVaultClientSecret))]
 class Build : NukeBuild
 {
     public static int Main () => Execute<Build>(x => x.Compile);
@@ -38,6 +34,13 @@ class Build : NukeBuild
     [GitVersion] readonly GitVersion GitVersion;
     [GitRepository] readonly GitRepository GitRepository;
     [KeyVault] KeyVault KeyVault;
+
+
+    [KeyVaultSettings(
+        BaseUrlParameterName = nameof(KeyVaultBaseUrl),
+        ClientIdParameterName = nameof(KeyVaultClientId),
+        ClientSecretParameterName = nameof(KeyVaultClientSecret))]
+    private readonly KeyVaultSettings KeyVaultSettings;
 
     [KeyVaultSecret] string DocuApiEndpoint;
     [KeyVaultSecret] string GitHubAuthenticationToken;
@@ -112,7 +115,7 @@ class Build : NukeBuild
                         .Add("cover")
                         .Add($"/TargetExecutable=\"{dotnetPath}\"")
                         .Add($"/TargetWorkingDir=\"{projectDirectory}\"")
-                        .Add($"/TargetArguments=\"xunit -nobuild \\\"-xml {OutputDirectory / projectName}_testresults.xml\\\"\"")
+                        .Add($"/TargetArguments=\"test --no-build --test-adapter-path:. \\\"--logger:xunit;LogFilePath={OutputDirectory}/{snapshotIndex}_testresults.xml\\\"\"")
                         .Add("/Filters=\"+:Dangl.AspNetCore.FileHandling\"")
                         .Add("/AttributeFilters=\"System.CodeDom.Compiler.GeneratedCodeAttribute\"")
                         .Add($"/Output=\"{OutputDirectory / $"coverage{snapshotIndex:00}.snapshot"}\""));
@@ -262,7 +265,7 @@ class Build : NukeBuild
             var repositoryInfo = GetGitHubRepositoryInfo(GitRepository);
             var nuGetPackages = GlobFiles(OutputDirectory, "*.nupkg").NotEmpty().ToArray();
 
-            PublishRelease(new GitHubReleaseSettings()
+            PublishRelease(x => x
                 .SetArtifactPaths(nuGetPackages)
                 .SetCommitSha(GitVersion.Sha)
                 .SetReleaseNotes(completeChangeLog)

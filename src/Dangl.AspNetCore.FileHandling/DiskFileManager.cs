@@ -25,11 +25,28 @@ namespace Dangl.AspNetCore.FileHandling
         /// Will return the file on disk or a failed repository result for errors or if the file
         /// can not be found
         /// </summary>
+        /// <param name="container"></param>
+        /// <param name="fileName"></param>
+        /// <returns></returns>
+        public Task<RepositoryResult<Stream>> GetFileAsync(string container, string fileName)
+        {
+            return InternalGetFileAsync(null, container, fileName);
+        }
+
+        /// <summary>
+        /// Will return the file on disk or a failed repository result for errors or if the file
+        /// can not be found
+        /// </summary>
         /// <param name="fileId"></param>
         /// <param name="container"></param>
         /// <param name="fileName"></param>
         /// <returns></returns>
         public Task<RepositoryResult<Stream>> GetFileAsync(Guid fileId, string container, string fileName)
+        {
+            return InternalGetFileAsync(fileId, container, fileName);
+        }
+
+        private Task<RepositoryResult<Stream>> InternalGetFileAsync(Guid? fileId, string container, string fileName)
         {
             var fileSavePath = GetFilePath(fileId, container, fileName);
 
@@ -48,6 +65,20 @@ namespace Dangl.AspNetCore.FileHandling
             {
                 return Task.FromResult(RepositoryResult<Stream>.Fail(e.ToString()));
             }
+        }
+
+        /// <summary>
+        /// Will save the file on disk, relative to the root folder in a folder
+        /// matching the container name
+        /// </summary>
+        /// <param name="container"></param>
+        /// <param name="fileName"></param>
+        /// <param name="fileStream"></param>
+        /// <returns></returns>
+        public Task<RepositoryResult> SaveFileAsync(string container, string fileName, Stream fileStream)
+        {
+            var fileSavePath = GetFilePath(null, container, fileName);
+            return SaveFileToDiskAsync(fileSavePath, fileStream);
         }
 
         /// <summary>
@@ -119,11 +150,65 @@ namespace Dangl.AspNetCore.FileHandling
         /// </param>
         /// <param name="fileName"></param>
         /// <returns></returns>
-        public string GetFilePath(Guid fileId, string container, string fileName)
+        public string GetFilePath(Guid? fileId, string container, string fileName)
         {
-            var relativeFilePath = RelativeFilePathBuilder.GetRelativeFilePath(fileId, container, fileName);
+            var relativeFilePath = fileId == null
+                ? RelativeFilePathBuilder.GetRelativeFilePath(container, fileName)
+                : RelativeFilePathBuilder.GetRelativeFilePath((Guid)fileId, container, fileName);
             var fullFilePath = Path.Combine(_rootFolder, relativeFilePath);
             return fullFilePath;
+        }
+
+        /// <summary>
+        /// Deletes the file
+        /// </summary>
+        /// <param name="container"></param>
+        /// <param name="fileName"></param>
+        /// <returns></returns>
+        public Task<RepositoryResult> DeleteFileAsync(string container, string fileName)
+        {
+            var filePath = GetFilePath(null, container, fileName);
+            return DeleteFileAsync(filePath);
+        }
+
+        /// <summary>
+        /// Deletes the file
+        /// </summary>
+        /// <param name="fileId"></param>
+        /// <param name="container"></param>
+        /// <param name="fileName"></param>
+        /// <returns></returns>
+        public Task<RepositoryResult> DeleteFileAsync(Guid fileId, string container, string fileName)
+        {
+            var filePath = GetFilePath(fileId, container, fileName);
+            return DeleteFileAsync(filePath);
+        }
+
+        /// <summary>
+        /// Deletes the file
+        /// </summary>
+        /// <param name="fileDate"></param>
+        /// <param name="container"></param>
+        /// <param name="fileName"></param>
+        /// <returns></returns>
+        public Task<RepositoryResult> DeleteFileAsync(DateTime fileDate, string container, string fileName)
+        {
+            var timeStampedRelativePath = TimeStampedFilePathBuilder.GetTimeStampedFilePath(fileDate, fileName);
+            var fileSavePath = Path.Combine(_rootFolder, container, timeStampedRelativePath);
+            return DeleteFileAsync(fileSavePath);
+        }
+
+        private Task<RepositoryResult> DeleteFileAsync(string absolutePath)
+        {
+            try
+            {
+                File.Delete(absolutePath);
+                return Task.FromResult(RepositoryResult.Success());
+            }
+            catch
+            {
+                return Task.FromResult(RepositoryResult.Fail());
+            }
         }
     }
 }

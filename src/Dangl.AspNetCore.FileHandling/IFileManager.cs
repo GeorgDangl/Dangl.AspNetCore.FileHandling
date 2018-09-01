@@ -14,11 +14,33 @@ namespace Dangl.AspNetCore.FileHandling
         /// Will return the file or a failed repository result for errors or if the file
         /// can not be found
         /// </summary>
+        /// <param name="container"></param>
+        /// <param name="fileName"></param>
+        /// <returns></returns>
+        Task<RepositoryResult<Stream>> GetFileAsync(string container, string fileName);
+
+        /// <summary>
+        /// Will return the file or a failed repository result for errors or if the file
+        /// can not be found
+        /// </summary>
         /// <param name="fileId"></param>
         /// <param name="container"></param>
         /// <param name="fileName"></param>
         /// <returns></returns>
         Task<RepositoryResult<Stream>> GetFileAsync(Guid fileId, string container, string fileName);
+
+        /// <summary>
+        /// Saves a file
+        /// </summary>
+        /// <param name="container">
+        /// The container name must be at least 3 characters long and at maximum 63 characters long.
+        /// It can only consist of lowercase alphanumeric characters and the '-' (dash) character. This is to enforce
+        /// compatibility with Azure blob storage, if a later migration is performed to Azure.
+        /// </param>
+        /// <param name="fileName"></param>
+        /// <param name="fileStream"></param>
+        /// <returns></returns>
+        Task<RepositoryResult> SaveFileAsync(string container, string fileName, Stream fileStream);
 
         /// <summary>
         /// Saves a file
@@ -47,5 +69,31 @@ namespace Dangl.AspNetCore.FileHandling
         /// <param name="fileStream"></param>
         /// <returns></returns>
         Task<RepositoryResult> SaveFileAsync(DateTime fileDate, string container, string fileName, Stream fileStream);
+
+        /// <summary>
+        /// Deletes the file
+        /// </summary>
+        /// <param name="container"></param>
+        /// <param name="fileName"></param>
+        /// <returns></returns>
+        Task<RepositoryResult> DeleteFileAsync(string container, string fileName);
+
+        /// <summary>
+        /// Deletes the file
+        /// </summary>
+        /// <param name="fileId"></param>
+        /// <param name="container"></param>
+        /// <param name="fileName"></param>
+        /// <returns></returns>
+        Task<RepositoryResult> DeleteFileAsync(Guid fileId, string container, string fileName);
+
+        /// <summary>
+        /// Deletes the file
+        /// </summary>
+        /// <param name="fileDate"></param>
+        /// <param name="container"></param>
+        /// <param name="fileName"></param>
+        /// <returns></returns>
+        Task<RepositoryResult> DeleteFileAsync(DateTime fileDate, string container, string fileName);
     }
 }
