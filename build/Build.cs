@@ -112,7 +112,7 @@ class Build : NukeBuild
                         .Add("cover")
                         .Add($"/TargetExecutable=\"{dotnetPath}\"")
                         .Add($"/TargetWorkingDir=\"{projectDirectory}\"")
-                        .Add($"/TargetArguments=\"xunit -nobuild \\\"-xml {OutputDirectory / projectName}_testresults.xml\\\"\"")
+                        .Add($"/TargetArguments=\"test --no-build --test-adapter-path:. \\\"--logger:xunit;LogFilePath={OutputDirectory}/{snapshotIndex}_testresults.xml\\\"\"")
                         .Add("/Filters=\"+:Dangl.AspNetCore.FileHandling\"")
                         .Add("/AttributeFilters=\"System.CodeDom.Compiler.GeneratedCodeAttribute\"")
                         .Add($"/Output=\"{OutputDirectory / $"coverage{snapshotIndex:00}.snapshot"}\""));
