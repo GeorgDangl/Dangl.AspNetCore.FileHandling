@@ -4,6 +4,7 @@ All notable changes to **Dangl.AspNetCore.FileHandling** are documented here.
 
 ## v0.1.6:
 - Add option to get and save files with just their filename / filepath and a container name
+- Add option to delete files
 
 ## v0.1.5:
 - Add option to save timestamped files in a hierarchical structure

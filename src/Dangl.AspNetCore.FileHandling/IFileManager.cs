@@ -69,5 +69,31 @@ namespace Dangl.AspNetCore.FileHandling
         /// <param name="fileStream"></param>
         /// <returns></returns>
         Task<RepositoryResult> SaveFileAsync(DateTime fileDate, string container, string fileName, Stream fileStream);
+
+        /// <summary>
+        /// Deletes the file
+        /// </summary>
+        /// <param name="container"></param>
+        /// <param name="fileName"></param>
+        /// <returns></returns>
+        Task<RepositoryResult> DeleteFileAsync(string container, string fileName);
+
+        /// <summary>
+        /// Deletes the file
+        /// </summary>
+        /// <param name="fileId"></param>
+        /// <param name="container"></param>
+        /// <param name="fileName"></param>
+        /// <returns></returns>
+        Task<RepositoryResult> DeleteFileAsync(Guid fileId, string container, string fileName);
+
+        /// <summary>
+        /// Deletes the file
+        /// </summary>
+        /// <param name="fileDate"></param>
+        /// <param name="container"></param>
+        /// <param name="fileName"></param>
+        /// <returns></returns>
+        Task<RepositoryResult> DeleteFileAsync(DateTime fileDate, string container, string fileName);
     }
 }

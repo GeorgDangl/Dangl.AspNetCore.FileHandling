@@ -159,5 +159,67 @@ namespace Dangl.AspNetCore.FileHandling.Azure
             var containerReference = _blobClient.GetContainerReference(container);
             return containerReference.GetBlockBlobReference(filePath);
         }
+
+        /// <summary>
+        /// Deletes the file
+        /// </summary>
+        /// <param name="container"></param>
+        /// <param name="fileName"></param>
+        /// <returns></returns>
+        public async Task<RepositoryResult> DeleteFileAsync(string container, string fileName)
+        {
+            var blobReference = GetBlobReference(container, fileName);
+            try
+            {
+                await blobReference.DeleteAsync();
+                return RepositoryResult.Success();
+            }
+            catch
+            {
+                return RepositoryResult.Fail();
+            }
+        }
+
+        /// <summary>
+        /// Deletes the file
+        /// </summary>
+        /// <param name="fileId"></param>
+        /// <param name="container"></param>
+        /// <param name="fileName"></param>
+        /// <returns></returns>
+        public async Task<RepositoryResult> DeleteFileAsync(Guid fileId, string container, string fileName)
+        {
+            var blobReference = GetBlobReference(fileId, container, fileName);
+            try
+            {
+                await blobReference.DeleteAsync();
+                return RepositoryResult.Success();
+            }
+            catch
+            {
+                return RepositoryResult.Fail();
+            }
+        }
+
+        /// <summary>
+        /// Deletes the file
+        /// </summary>
+        /// <param name="fileDate"></param>
+        /// <param name="container"></param>
+        /// <param name="fileName"></param>
+        /// <returns></returns>
+        public async Task<RepositoryResult> DeleteFileAsync(DateTime fileDate, string container, string fileName)
+        {
+            var blobReference = GetTimeStampedBlobReference(fileDate, container, fileName);
+            try
+            {
+                await blobReference.DeleteAsync();
+                return RepositoryResult.Success();
+            }
+            catch
+            {
+                return RepositoryResult.Fail();
+            }
+        }
     }
 }

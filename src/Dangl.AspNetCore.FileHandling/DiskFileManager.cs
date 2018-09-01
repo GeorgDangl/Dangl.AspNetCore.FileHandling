@@ -158,5 +158,57 @@ namespace Dangl.AspNetCore.FileHandling
             var fullFilePath = Path.Combine(_rootFolder, relativeFilePath);
             return fullFilePath;
         }
+
+        /// <summary>
+        /// Deletes the file
+        /// </summary>
+        /// <param name="container"></param>
+        /// <param name="fileName"></param>
+        /// <returns></returns>
+        public Task<RepositoryResult> DeleteFileAsync(string container, string fileName)
+        {
+            var filePath = GetFilePath(null, container, fileName);
+            return DeleteFileAsync(filePath);
+        }
+
+        /// <summary>
+        /// Deletes the file
+        /// </summary>
+        /// <param name="fileId"></param>
+        /// <param name="container"></param>
+        /// <param name="fileName"></param>
+        /// <returns></returns>
+        public Task<RepositoryResult> DeleteFileAsync(Guid fileId, string container, string fileName)
+        {
+            var filePath = GetFilePath(fileId, container, fileName);
+            return DeleteFileAsync(filePath);
+        }
+
+        /// <summary>
+        /// Deletes the file
+        /// </summary>
+        /// <param name="fileDate"></param>
+        /// <param name="container"></param>
+        /// <param name="fileName"></param>
+        /// <returns></returns>
+        public Task<RepositoryResult> DeleteFileAsync(DateTime fileDate, string container, string fileName)
+        {
+            var timeStampedRelativePath = TimeStampedFilePathBuilder.GetTimeStampedFilePath(fileDate, fileName);
+            var fileSavePath = Path.Combine(_rootFolder, container, timeStampedRelativePath);
+            return DeleteFileAsync(fileSavePath);
+        }
+
+        private Task<RepositoryResult> DeleteFileAsync(string absolutePath)
+        {
+            try
+            {
+                File.Delete(absolutePath);
+                return Task.FromResult(RepositoryResult.Success());
+            }
+            catch
+            {
+                return Task.FromResult(RepositoryResult.Fail());
+            }
+        }
     }
 }

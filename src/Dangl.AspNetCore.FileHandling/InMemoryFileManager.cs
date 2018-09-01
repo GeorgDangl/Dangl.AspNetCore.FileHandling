@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using Dangl.Data.Shared;
 
@@ -131,6 +132,60 @@ namespace Dangl.AspNetCore.FileHandling
             });
 
             return RepositoryResult.Success();
+        }
+
+        /// <summary>
+        /// Deletes the file
+        /// </summary>
+        /// <param name="container"></param>
+        /// <param name="fileName"></param>
+        /// <returns></returns>
+        public Task<RepositoryResult> DeleteFileAsync(string container, string fileName)
+        {
+            var file = _savedFiles.FirstOrDefault(f => f.Container == container
+                && f.FileName == fileName);
+            if (file != null)
+            {
+                _savedFiles.Remove(file);
+            }
+            return Task.FromResult(RepositoryResult.Success());
+        }
+
+        /// <summary>
+        /// Deletes the file
+        /// </summary>
+        /// <param name="fileId"></param>
+        /// <param name="container"></param>
+        /// <param name="fileName"></param>
+        /// <returns></returns>
+        public Task<RepositoryResult> DeleteFileAsync(Guid fileId, string container, string fileName)
+        {
+            var file = _savedFiles.FirstOrDefault(f => f.FileId == fileId
+                && f.Container == container
+                && f.FileName == fileName);
+            if (file != null)
+            {
+                _savedFiles.Remove(file);
+            }
+            return Task.FromResult(RepositoryResult.Success());
+        }
+
+        /// <summary>
+        /// Deletes the file
+        /// </summary>
+        /// <param name="fileDate"></param>
+        /// <param name="container"></param>
+        /// <param name="fileName"></param>
+        /// <returns></returns>
+        public Task<RepositoryResult> DeleteFileAsync(DateTime fileDate, string container, string fileName)
+        {
+            var file = _savedFiles.FirstOrDefault(f => f.Container == container
+                && f.FileName == fileName);
+            if (file != null)
+            {
+                _savedFiles.Remove(file);
+            }
+            return Task.FromResult(RepositoryResult.Success());
         }
     }
 }
