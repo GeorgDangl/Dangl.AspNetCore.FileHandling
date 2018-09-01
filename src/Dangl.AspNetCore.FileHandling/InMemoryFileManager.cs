@@ -30,6 +30,26 @@ namespace Dangl.AspNetCore.FileHandling
         /// <summary>
         /// Returns a cached file
         /// </summary>
+        /// <param name="container"></param>
+        /// <param name="fileName"></param>
+        /// <returns></returns>
+        public Task<RepositoryResult<Stream>> GetFileAsync(string container, string fileName)
+        {
+            var file = _savedFiles
+                .Find(f => f.Container == container
+                    && f.FileName == fileName);
+
+            if (file != null)
+            {
+                return Task.FromResult(RepositoryResult<Stream>.Success(file.FileStream));
+            }
+
+            return Task.FromResult(RepositoryResult<Stream>.Fail("File not found"));
+        }
+
+        /// <summary>
+        /// Returns a cached file
+        /// </summary>
         /// <param name="fileId"></param>
         /// <param name="container"></param>
         /// <param name="fileName"></param>
@@ -47,6 +67,18 @@ namespace Dangl.AspNetCore.FileHandling
             }
 
             return Task.FromResult(RepositoryResult<Stream>.Fail("File not found"));
+        }
+
+        /// <summary>
+        /// Caches a file to memory
+        /// </summary>
+        /// <param name="container"></param>
+        /// <param name="fileName"></param>
+        /// <param name="fileStream"></param>
+        /// <returns></returns>
+        public Task<RepositoryResult> SaveFileAsync(string container, string fileName, Stream fileStream)
+        {
+            return SaveFileAsync(Guid.NewGuid(), container, fileName, fileStream);
         }
 
         /// <summary>

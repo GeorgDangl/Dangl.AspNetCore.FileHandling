@@ -13,6 +13,34 @@ namespace Dangl.AspNetCore.FileHandling
         /// This will return the relative file path of a file to save. It will be truncated to a max length of 1024 characters to be compatible with
         /// Azure storage restrictions if a later migration is performed to Azure.
         /// </summary>
+        /// <param name="container">
+        /// The container name must be at least 3 characters long and at maximum 63 characters long.
+        /// It can only consist of lowercase alphanumeric characters and the '-' (dash) character. This is to enforce
+        /// compatibility with Azure blob storage, if a later migration is performed to Azure.
+        /// </param>
+        /// <param name="fileName"></param>
+        /// <returns></returns>
+        public static string GetRelativeFilePath(string container, string fileName)
+        {
+            if (string.IsNullOrWhiteSpace(container))
+            {
+                throw new ArgumentNullException(nameof(container));
+            }
+
+            if (!ContainerNameIsValid(container))
+            {
+                throw new ArgumentException($"The {nameof(container)} may only contain lowercase alphanumeric characters or the dash '-' char.", nameof(container));
+            }
+
+            fileName = fileName.WithMaxLength(FileHandlerDefaults.FILE_PATH_MAX_LENGTH);
+            var relativeFilePath = Path.Combine(container, fileName);
+            return relativeFilePath;
+        }
+
+        /// <summary>
+        /// This will return the relative file path of a file to save. It will be truncated to a max length of 1024 characters to be compatible with
+        /// Azure storage restrictions if a later migration is performed to Azure.
+        /// </summary>
         /// <param name="fileId"></param>
         /// <param name="container">
         /// The container name must be at least 3 characters long and at maximum 63 characters long.

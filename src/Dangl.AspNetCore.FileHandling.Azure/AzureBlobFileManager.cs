@@ -28,13 +28,32 @@ namespace Dangl.AspNetCore.FileHandling.Azure
         /// Will return the file from the blob storage or
         /// a failed repository result if it does not exist
         /// </summary>
+        /// <param name="container"></param>
+        /// <param name="fileName"></param>
+        /// <returns></returns>
+        public Task<RepositoryResult<Stream>> GetFileAsync(string container, string fileName)
+        {
+            return InternalGetFileAsync(null, container, fileName);
+        }
+
+        /// <summary>
+        /// Will return the file from the blob storage or
+        /// a failed repository result if it does not exist
+        /// </summary>
         /// <param name="fileId"></param>
         /// <param name="container"></param>
         /// <param name="fileName"></param>
         /// <returns></returns>
-        public async Task<RepositoryResult<Stream>> GetFileAsync(Guid fileId, string container, string fileName)
+        public Task<RepositoryResult<Stream>> GetFileAsync(Guid fileId, string container, string fileName)
         {
-            var blobReference = GetBlobReference(fileId, container, fileName);
+            return InternalGetFileAsync(fileId, container, fileName);
+        }
+
+        private async Task<RepositoryResult<Stream>> InternalGetFileAsync(Guid? fileId, string container, string fileName)
+        {
+            var blobReference = fileId == null
+                ? GetBlobReference(container, fileName)
+                : GetBlobReference((Guid)fileId, container, fileName);
             try
             {
                 var memoryStream = new MemoryStream();
@@ -46,6 +65,19 @@ namespace Dangl.AspNetCore.FileHandling.Azure
             {
                 return RepositoryResult<Stream>.Fail(e.ToString());
             }
+        }
+
+        /// <summary>
+        /// Will save the file to Azure blob storage
+        /// </summary>
+        /// <param name="container"></param>
+        /// <param name="fileName"></param>
+        /// <param name="fileStream"></param>
+        /// <returns></returns>
+        public Task<RepositoryResult> SaveFileAsync(string container, string fileName, Stream fileStream)
+        {
+            var blobReference = GetBlobReference(container, fileName);
+            return UploadBlobReference(blobReference, fileStream);
         }
 
         /// <summary>
@@ -103,6 +135,14 @@ namespace Dangl.AspNetCore.FileHandling.Azure
             await _blobClient.GetContainerReference(container)
                 .CreateIfNotExistsAsync();
             return RepositoryResult.Success();
+        }
+
+        private CloudBlockBlob GetBlobReference(string container, string fileName)
+        {
+            var filePath = fileName
+                    .WithMaxLength(FileHandlerDefaults.FILE_PATH_MAX_LENGTH);
+            var containerReference = _blobClient.GetContainerReference(container);
+            return containerReference.GetBlockBlobReference(filePath);
         }
 
         private CloudBlockBlob GetBlobReference(Guid fileId, string container, string fileName)
