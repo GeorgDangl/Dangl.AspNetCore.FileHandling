@@ -57,7 +57,7 @@ namespace Dangl.AspNetCore.FileHandling
                     return Task.FromResult(RepositoryResult<Stream>.Fail("The file does not exist"));
                 }
 
-                var fileStream = File.Open(fileSavePath, FileMode.Open);
+                var fileStream = File.Open(fileSavePath, FileMode.Open, FileAccess.Read);
 
                 return Task.FromResult(RepositoryResult<Stream>.Success(fileStream));
             }
