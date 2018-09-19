@@ -1,40 +1,39 @@
-﻿using System;
-using System.IO;
-using System.Linq;
+﻿using Nuke.Azure.KeyVault;
+using Nuke.CoberturaConverter;
 using Nuke.Common;
 using Nuke.Common.Git;
 using Nuke.Common.Tooling;
+using Nuke.Common.Tools.DocFx;
+using Nuke.Common.Tools.DotNet;
 using Nuke.Common.Tools.GitVersion;
+using Nuke.Common.Utilities;
+using Nuke.Common.Utilities.Collections;
+using Nuke.GitHub;
+using Nuke.WebDocu;
+using System;
+using System.IO;
+using System.Linq;
+using static Nuke.CoberturaConverter.CoberturaConverterTasks;
+using static Nuke.Common.ChangeLog.ChangelogTasks;
 using static Nuke.Common.EnvironmentInfo;
 using static Nuke.Common.IO.FileSystemTasks;
 using static Nuke.Common.IO.PathConstruction;
-using static Nuke.Common.Tools.DotNet.DotNetTasks;
 using static Nuke.Common.Tools.DocFx.DocFxTasks;
-using Nuke.Common.Tools.DocFx;
-using Nuke.Common.Tools.DotNet;
-using static Nuke.Common.ChangeLog.ChangelogTasks;
+using static Nuke.Common.Tools.DotNet.DotNetTasks;
 using static Nuke.GitHub.ChangeLogExtensions;
-using Nuke.CoberturaConverter;
-using static Nuke.CoberturaConverter.CoberturaConverterTasks;
-using Nuke.Common.Utilities;
-using Nuke.Common.Utilities.Collections;
 using static Nuke.GitHub.GitHubTasks;
-using Nuke.GitHub;
-using Nuke.WebDocu;
 using static Nuke.WebDocu.WebDocuTasks;
-using Nuke.Azure.KeyVault;
 
 class Build : NukeBuild
 {
-    public static int Main () => Execute<Build>(x => x.Compile);
+    public static int Main() => Execute<Build>(x => x.Compile);
 
-    [Parameter] string KeyVaultBaseUrl;
-    [Parameter] string KeyVaultClientId;
-    [Parameter] string KeyVaultClientSecret;
+    [Parameter] readonly string KeyVaultBaseUrl;
+    [Parameter] readonly string KeyVaultClientId;
+    [Parameter] readonly string KeyVaultClientSecret;
     [GitVersion] readonly GitVersion GitVersion;
     [GitRepository] readonly GitRepository GitRepository;
-    [KeyVault] KeyVault KeyVault;
-
+    [KeyVault] readonly KeyVault KeyVault;
 
     [KeyVaultSettings(
         BaseUrlParameterName = nameof(KeyVaultBaseUrl),
@@ -42,8 +41,8 @@ class Build : NukeBuild
         ClientSecretParameterName = nameof(KeyVaultClientSecret))]
     private readonly KeyVaultSettings KeyVaultSettings;
 
-    [KeyVaultSecret] string DocuApiEndpoint;
-    [KeyVaultSecret] string GitHubAuthenticationToken;
+    [KeyVaultSecret] readonly string DocuApiEndpoint;
+    [KeyVaultSecret] readonly string GitHubAuthenticationToken;
     [KeyVaultSecret] readonly string PublicMyGetSource;
     [KeyVaultSecret] readonly string PublicMyGetApiKey;
     [KeyVaultSecret] readonly string NuGetApiKey;
@@ -51,7 +50,8 @@ class Build : NukeBuild
 
     string DocFxFile => SolutionDirectory / "docfx.json";
     string ChangeLogFile => RootDirectory / "CHANGELOG.md";
-    string DocFxDotNetSdkVersion = "2.1.4";
+
+    readonly string DocFxDotNetSdkVersion = "2.1.4";
 
     Target Clean => _ => _
             .Executes(() =>
@@ -223,7 +223,6 @@ class Build : NukeBuild
             }
 
             File.Copy(SolutionDirectory / "README.md", SolutionDirectory / "index.md");
-
 
             DocFxBuild(DocFxFile, s => s
                 .ClearXRefMaps()
