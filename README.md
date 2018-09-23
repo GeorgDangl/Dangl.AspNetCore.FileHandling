@@ -41,3 +41,7 @@ This library offers extensions for dependency injection:
 * `AddInMemoryFileManager()` for testing
 * `AddDiskFileManager(string rootFolder)`
 * `AddAzureBlobFileManager(string storageConnectionString)`
+
+---
+
+[MIT Licence](LICENCE.md)
