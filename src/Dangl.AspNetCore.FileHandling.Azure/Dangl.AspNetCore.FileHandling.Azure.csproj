@@ -7,6 +7,8 @@
     <Copyright>(c) $([System.DateTime]::Now.Year) Georg Dangl</Copyright>
     <PackageProjectUrl>https://docs.dangl-it.com/Projects/Dangl.AspNetCore.FileHandling</PackageProjectUrl>
     <PackageIconUrl>https://blog.dangl.me/media/1114/gd_icon_256.png</PackageIconUrl>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>Dangl.AspNetCore.FileHandling.Azure.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
 
   <ItemGroup>
