@@ -1,40 +1,49 @@
-﻿using System;
-using System.IO;
-using System.Linq;
+﻿using Nuke.Azure.KeyVault;
+using Nuke.CoberturaConverter;
 using Nuke.Common;
 using Nuke.Common.Git;
+using Nuke.Common.ProjectModel;
 using Nuke.Common.Tooling;
+using Nuke.Common.Tools.DotCover;
+using Nuke.Common.Tools.DotNet;
 using Nuke.Common.Tools.GitVersion;
+using Nuke.Common.Tools.ReportGenerator;
+using Nuke.Common.Utilities;
+using Nuke.Common.Utilities.Collections;
+using Nuke.DocFX;
+using Nuke.GitHub;
+using Nuke.WebDocu;
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Xml.Linq;
+using System.Xml.XPath;
+using static Nuke.CoberturaConverter.CoberturaConverterTasks;
+using static Nuke.Common.ChangeLog.ChangelogTasks;
 using static Nuke.Common.EnvironmentInfo;
 using static Nuke.Common.IO.FileSystemTasks;
 using static Nuke.Common.IO.PathConstruction;
+using static Nuke.Common.IO.XmlTasks;
+using static Nuke.Common.Tools.DotCover.DotCoverTasks;
 using static Nuke.Common.Tools.DotNet.DotNetTasks;
-using static Nuke.Common.Tools.DocFx.DocFxTasks;
-using Nuke.Common.Tools.DocFx;
-using Nuke.Common.Tools.DotNet;
-using static Nuke.Common.ChangeLog.ChangelogTasks;
+using static Nuke.Common.Tools.ReportGenerator.ReportGeneratorTasks;
+using static Nuke.DocFX.DocFXTasks;
 using static Nuke.GitHub.ChangeLogExtensions;
-using Nuke.CoberturaConverter;
-using static Nuke.CoberturaConverter.CoberturaConverterTasks;
-using Nuke.Common.Utilities;
-using Nuke.Common.Utilities.Collections;
 using static Nuke.GitHub.GitHubTasks;
-using Nuke.GitHub;
-using Nuke.WebDocu;
 using static Nuke.WebDocu.WebDocuTasks;
-using Nuke.Azure.KeyVault;
 
 class Build : NukeBuild
 {
-    public static int Main () => Execute<Build>(x => x.Compile);
+    public static int Main() => Execute<Build>(x => x.Compile);
 
-    [Parameter] string KeyVaultBaseUrl;
-    [Parameter] string KeyVaultClientId;
-    [Parameter] string KeyVaultClientSecret;
+    [Parameter] readonly string KeyVaultBaseUrl;
+    [Parameter] readonly string KeyVaultClientId;
+    [Parameter] readonly string KeyVaultClientSecret;
     [GitVersion] readonly GitVersion GitVersion;
     [GitRepository] readonly GitRepository GitRepository;
-    [KeyVault] KeyVault KeyVault;
-
+    [KeyVault] readonly KeyVault KeyVault;
 
     [KeyVaultSettings(
         BaseUrlParameterName = nameof(KeyVaultBaseUrl),
@@ -42,22 +51,30 @@ class Build : NukeBuild
         ClientSecretParameterName = nameof(KeyVaultClientSecret))]
     private readonly KeyVaultSettings KeyVaultSettings;
 
-    [KeyVaultSecret] string DocuApiEndpoint;
-    [KeyVaultSecret] string GitHubAuthenticationToken;
+    [Parameter] readonly string Configuration = IsLocalBuild ? "Debug" : "Release";
+
+    [KeyVaultSecret] private readonly string DocuBaseUrl;
+    [KeyVaultSecret] readonly string GitHubAuthenticationToken;
     [KeyVaultSecret] readonly string PublicMyGetSource;
     [KeyVaultSecret] readonly string PublicMyGetApiKey;
     [KeyVaultSecret] readonly string NuGetApiKey;
     [KeyVaultSecret("DanglAspNetCoreFileHandling-DocuApiKey")] readonly string DocuApiKey;
 
+    [Solution("Dangl.AspNetCore.FileHandling.sln")] readonly Solution Solution;
+    AbsolutePath SolutionDirectory => Solution.Directory;
+    AbsolutePath OutputDirectory => SolutionDirectory / "output";
+    AbsolutePath SourceDirectory => SolutionDirectory / "src";
+
     string DocFxFile => SolutionDirectory / "docfx.json";
     string ChangeLogFile => RootDirectory / "CHANGELOG.md";
-    string DocFxDotNetSdkVersion = "2.1.4";
+
+    readonly string DocFxDotNetSdkVersion = "2.1.4";
 
     Target Clean => _ => _
             .Executes(() =>
             {
-                DeleteDirectories(GlobDirectories(SourceDirectory, "**/bin", "**/obj"));
-                DeleteDirectories(GlobDirectories(SolutionDirectory / "test", "**/bin", "**/obj"));
+                GlobDirectories(SourceDirectory, "**/bin", "**/obj").ForEach(DeleteDirectory);
+                GlobDirectories(SolutionDirectory / "test", "**/bin", "**/obj").ForEach(DeleteDirectory);
                 EnsureCleanDirectory(OutputDirectory);
             });
 
@@ -65,20 +82,19 @@ class Build : NukeBuild
             .DependsOn(Clean)
             .Executes(() =>
             {
-                DotNetRestore(s => DefaultDotNetRestore
-                    // Need to set it here, otherwise it takes the one from NUKEs .tmp directory
-                    .SetToolPath(ToolPathResolver.GetPathExecutable("dotnet")));
+                DotNetRestore();
             });
 
     Target Compile => _ => _
             .DependsOn(Restore)
             .Executes(() =>
             {
-                DotNetBuild(s => DefaultDotNetBuild
-                    // Need to set it here, otherwise it takes the one from NUKEs .tmp directory
-                    .SetToolPath(ToolPathResolver.GetPathExecutable("dotnet"))
+                DotNetBuild(x => x
+                    .SetConfiguration(Configuration)
+                    .EnableNoRestore()
                     .SetFileVersion(GitVersion.GetNormalizedFileVersion())
-                    .SetAssemblyVersion($"{GitVersion.Major}.{GitVersion.Minor}.{GitVersion.Patch}.0"));
+                    .SetAssemblyVersion(GitVersion.AssemblySemVer)
+                    .SetInformationalVersion(GitVersion.InformationalVersion));
             });
 
     Target Pack => _ => _
@@ -87,85 +103,141 @@ class Build : NukeBuild
             {
                 var changeLog = GetCompleteChangeLog(ChangeLogFile)
                     .EscapeStringPropertyForMsBuild();
-                DotNetPack(s => DefaultDotNetPack
-                    // Need to set it here, otherwise it takes the one from NUKEs .tmp directory
-                    .SetToolPath(ToolPathResolver.GetPathExecutable("dotnet"))
+
+                DotNetPack(x => x
+                    .SetConfiguration(Configuration)
                     .SetPackageReleaseNotes(changeLog)
-                    .SetDescription("Dangl.AspNetCore.FileHandling www.dangl-it.com"));
+                    .SetDescription("Dangl.AspNetCore.FileHandling www.dangl-it.com")
+                    .SetTitle("Dangl.AspNetCore.FileHandling www.dangl-it.com")
+                    .EnableNoBuild()
+                    .SetOutputDirectory(OutputDirectory)
+                    .SetVersion(GitVersion.NuGetVersion));
             });
 
     Target Coverage => _ => _
         .DependsOn(Compile)
-        .Executes(() =>
+        .Executes(async () =>
         {
-            var testProjects = GlobFiles(SolutionDirectory / "test", "*.csproj").ToList();
+            var testProjects = GlobFiles(RootDirectory / "test", "**/*.csproj").ToList();
             var dotnetPath = ToolPathResolver.GetPathExecutable("dotnet");
-            for (var i = 0; i < testProjects.Count; i++)
-            {
-                var testProject = testProjects[i];
-                var projectName = Path.GetFileNameWithoutExtension(testProject);
+            var snapshotIndex = 0;
 
-                /* DotCover */
-                var projectDirectory = Path.GetDirectoryName(testProject);
-                var snapshotIndex = i;
-                var toolSettings = new ToolSettings()
-                    .SetToolPath(ToolPathResolver.GetPackageExecutable("JetBrains.dotCover.CommandLineTools",
-                        "tools/dotCover.exe"))
-                    .SetArgumentConfigurator(a => a
-                        .Add("cover")
-                        .Add($"/TargetExecutable=\"{dotnetPath}\"")
-                        .Add($"/TargetWorkingDir=\"{projectDirectory}\"")
-                        .Add($"/TargetArguments=\"test --no-build --test-adapter-path:. \\\"--logger:xunit;LogFilePath={OutputDirectory}/{snapshotIndex}_testresults.xml\\\"\"")
-                        .Add("/Filters=\"+:Dangl.AspNetCore.FileHandling\"")
-                        .Add("/AttributeFilters=\"System.CodeDom.Compiler.GeneratedCodeAttribute\"")
-                        .Add($"/Output=\"{OutputDirectory / $"coverage{snapshotIndex:00}.snapshot"}\""));
-                ProcessTasks.StartProcess(toolSettings)
-                    .AssertZeroExitCode();
-            }
+            DotCoverCover(c => c
+                    .SetTargetExecutable(dotnetPath)
+                    .SetFilters("+:Dangl.AspNetCore.FileHandling")
+                    .SetAttributeFilters("System.CodeDom.Compiler.GeneratedCodeAttribute")
+                    .CombineWith(cc => testProjects.SelectMany(testProject =>
+                    {
+                        var projectDirectory = Path.GetDirectoryName(testProject);
+                        var targetFrameworks = GetTestFrameworksForProjectFile(testProject);
+                        return targetFrameworks.Select(targetFramework =>
+                        {
+                            snapshotIndex++;
+                            return cc
+                                .SetTargetWorkingDirectory(projectDirectory)
+                                .SetOutputFile(OutputDirectory / $"coverage{snapshotIndex:00}.snapshot")
+                                .SetTargetArguments($"test --no-build -f {targetFramework} --test-adapter-path:. \"--logger:xunit;LogFilePath={OutputDirectory}/{snapshotIndex}_testresults-{targetFramework}.xml\"");
+                        });
+                    })), degreeOfParallelism: System.Environment.ProcessorCount);
 
-            var snapshots = testProjects.Select((t, i) => OutputDirectory / $"coverage{i:00}.snapshot")
-                .Select(p => p.ToString())
-                .Aggregate((c, n) => c + ";" + n);
+            PrependFrameworkToTestresults();
 
-            var mergeSettings = new ToolSettings()
-                .SetToolPath(ToolPathResolver.GetPackageExecutable("JetBrains.dotCover.CommandLineTools",
-                    "tools/dotCover.exe"))
-                .SetArgumentConfigurator(a => a
-                    .Add("merge")
-                    .Add($"/Source=\"{snapshots}\"")
-                    .Add($"/Output=\"{OutputDirectory / "coverage.snapshot"}\""));
-            ProcessTasks.StartProcess(mergeSettings)
-                .AssertZeroExitCode();
+            var snapshots = GlobFiles(OutputDirectory, "*.snapshot")
+               .Aggregate((c, n) => c + ";" + n);
 
-            var reportSettings = new ToolSettings()
-                .SetToolPath(ToolPathResolver.GetPackageExecutable("JetBrains.dotCover.CommandLineTools",
-                    "tools/dotCover.exe"))
-                .SetArgumentConfigurator(a => a
-                    .Add("report")
-                    .Add($"/Source=\"{OutputDirectory / "coverage.snapshot"}\"")
-                    .Add($"/Output=\"{OutputDirectory / "coverage.xml"}\"")
-                    .Add("/ReportType=\"DetailedXML\""));
-            ProcessTasks.StartProcess(reportSettings)
-                .AssertZeroExitCode();
+            DotCoverMerge(c => c
+                .SetSource(snapshots)
+                .SetOutputFile(OutputDirectory / "coverage.snapshot"));
 
-            var reportGeneratorSettings = new ToolSettings()
-                .SetToolPath(ToolPathResolver.GetPackageExecutable("ReportGenerator", "tools/ReportGenerator.exe"))
-                .SetArgumentConfigurator(a => a
-                    .Add($"-reports:\"{OutputDirectory / "coverage.xml"}\"")
-                    .Add($"-targetdir:\"{OutputDirectory / "CoverageReport"}\""));
-            ProcessTasks.StartProcess(reportGeneratorSettings)
-                .AssertZeroExitCode();
+            DotCoverReport(c => c
+                .SetSource(OutputDirectory / "coverage.snapshot")
+                .SetOutputFile(OutputDirectory / "coverage.xml")
+                .SetReportType(DotCoverReportType.DetailedXml));
+
+            // This is the report that's pretty and visualized in Jenkins
+            ReportGenerator(c => c
+                .SetReports(OutputDirectory / "coverage.xml")
+                .SetTargetDirectory(OutputDirectory / "CoverageReport"));
 
             // This is the report in Cobertura format that integrates so nice in Jenkins
             // dashboard and allows to extract more metrics and set build health based
             // on coverage readings
-            DotCoverToCobertura(s => s
+            await DotCoverToCobertura(s => s
                     .SetInputFile(OutputDirectory / "coverage.xml")
                     .SetOutputFile(OutputDirectory / "cobertura_coverage.xml"))
-                .ConfigureAwait(false)
-                .GetAwaiter()
-                .GetResult();
+                .ConfigureAwait(false);
         });
+
+    private IEnumerable<string> GetTestFrameworksForProjectFile(string projectFile)
+    {
+        var targetFrameworks = XmlPeek(projectFile, "//Project/PropertyGroup//TargetFrameworks")
+            .Concat(XmlPeek(projectFile, "//Project/PropertyGroup//TargetFramework"))
+            .Distinct()
+            .SelectMany(f => f.Split(';'))
+            .Distinct();
+        return targetFrameworks;
+    }
+
+    private void PrependFrameworkToTestresults()
+    {
+        var testResults = GlobFiles(OutputDirectory, "*testresults*.xml").ToList();
+        Logger.Log(LogLevel.Normal, $"Found {testResults.Count} test result files on which to append the framework.");
+        foreach (var testResultFile in testResults)
+        {
+            var frameworkName = GetFrameworkNameFromFilename(testResultFile);
+            var xDoc = XDocument.Load(testResultFile);
+
+            foreach (var testType in ((IEnumerable)xDoc.XPathEvaluate("//test/@type")).OfType<XAttribute>())
+            {
+                testType.Value = frameworkName + "+" + testType.Value;
+            }
+
+            foreach (var testName in ((IEnumerable)xDoc.XPathEvaluate("//test/@name")).OfType<XAttribute>())
+            {
+                testName.Value = frameworkName + "+" + testName.Value;
+            }
+
+            xDoc.Save(testResultFile);
+        }
+
+        // Merge all the results to a single file
+        // The "run-time" attributes of the single assemblies is ensured to be unique for each single assembly by this test,
+        // since in Jenkins, the format is internally converted to JUnit. Aterwards, results with the same timestamps are
+        // ignored. See here for how the code is translated to JUnit format by the Jenkins plugin:
+        // https://github.com/jenkinsci/xunit-plugin/blob/d970c50a0501f59b303cffbfb9230ba977ce2d5a/src/main/resources/org/jenkinsci/plugins/xunit/types/xunitdotnet-2.0-to-junit.xsl#L75-L79
+        Logger.Log(LogLevel.Normal, "Updating \"run-time\" attributes in assembly entries to prevent Jenkins to treat them as duplicates");
+        var firstXdoc = XDocument.Load(testResults[0]);
+        var runtime = DateTime.Now;
+        var firstAssemblyNodes = firstXdoc.Root.Elements().Where(e => e.Name.LocalName == "assembly");
+        foreach (var assemblyNode in firstAssemblyNodes)
+        {
+            assemblyNode.SetAttributeValue("run-time", $"{runtime:HH:mm:ss}");
+            runtime = runtime.AddSeconds(1);
+        }
+        for (var i = 1; i < testResults.Count; i++)
+        {
+            var xDoc = XDocument.Load(testResults[i]);
+            var assemblyNodes = xDoc.Root.Elements().Where(e => e.Name.LocalName == "assembly");
+            foreach (var assemblyNode in assemblyNodes)
+            {
+                assemblyNode.SetAttributeValue("run-time", $"{runtime:HH:mm:ss}");
+                runtime = runtime.AddSeconds(1);
+            }
+            firstXdoc.Root.Add(assemblyNodes);
+        }
+
+        firstXdoc.Save(OutputDirectory / "testresults.xml");
+        testResults.ForEach(DeleteFile);
+    }
+
+    private string GetFrameworkNameFromFilename(string filename)
+    {
+        var name = Path.GetFileName(filename);
+        name = name.Substring(0, name.Length - ".xml".Length);
+        var startIndex = name.LastIndexOf('-');
+        name = name.Substring(startIndex + 1);
+        return name;
+    }
 
     Target Push => _ => _
         .DependsOn(Pack)
@@ -203,12 +275,7 @@ class Build : NukeBuild
         .DependsOn(Restore)
         .Executes(() =>
         {
-            // So it uses a fixed, known version of MsBuild to generate the metadata. Otherwise,
-            // updates of dotnet or Visual Studio could introduce incompatibilities and generation failures
-            var dotnetPath = Path.GetDirectoryName(ToolPathResolver.GetPathExecutable("dotnet.exe"));
-            var msBuildPath = Path.Combine(dotnetPath, "sdk", DocFxDotNetSdkVersion, "MSBuild.dll");
-            SetVariable("MSBUILD_EXE_PATH", msBuildPath);
-            DocFxMetadata(DocFxFile, s => s.SetLogLevel(DocFxLogLevel.Info));
+            DocFXMetadata(x => x.SetProjects(DocFxFile));
         });
 
     Target BuildDocumentation => _ => _
@@ -224,10 +291,7 @@ class Build : NukeBuild
 
             File.Copy(SolutionDirectory / "README.md", SolutionDirectory / "index.md");
 
-
-            DocFxBuild(DocFxFile, s => s
-                .ClearXRefMaps()
-                .SetLogLevel(DocFxLogLevel.Info));
+            DocFXBuild(x => x.SetConfigFile(DocFxFile));
 
             File.Delete(SolutionDirectory / "index.md");
             Directory.Delete(SolutionDirectory / "api", true);
@@ -238,12 +302,15 @@ class Build : NukeBuild
         .DependsOn(Push) // To have a relation between pushed package version and published docs version
         .DependsOn(BuildDocumentation)
         .Requires(() => DocuApiKey)
-        .Requires(() => DocuApiEndpoint)
+        .Requires(() => DocuBaseUrl)
         .Executes(() =>
         {
+            var changeLog = GetCompleteChangeLog(ChangeLogFile);
+
             WebDocu(s => s
-                .SetDocuApiEndpoint(DocuApiEndpoint)
+                .SetDocuBaseUrl(DocuBaseUrl)
                 .SetDocuApiKey(DocuApiKey)
+                .SetMarkdownChangelog(changeLog)
                 .SetSourceDirectory(OutputDirectory)
                 .SetVersion(GitVersion.NuGetVersion)
             );
@@ -252,7 +319,7 @@ class Build : NukeBuild
     Target PublishGitHubRelease => _ => _
         .DependsOn(Pack)
         .Requires(() => GitHubAuthenticationToken)
-        .OnlyWhen(() => GitVersion.BranchName.Equals("master") || GitVersion.BranchName.Equals("origin/master"))
+        .OnlyWhenDynamic(() => GitVersion.BranchName.Equals("master") || GitVersion.BranchName.Equals("origin/master"))
         .Executes(() =>
         {
             var releaseTag = $"v{GitVersion.MajorMinorPatch}";

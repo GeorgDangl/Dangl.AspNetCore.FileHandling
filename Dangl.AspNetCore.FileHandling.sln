@@ -14,6 +14,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		CHANGELOG.md = CHANGELOG.md
 		docfx.json = docfx.json
 		GitVersion.yml = GitVersion.yml
+		Jenkinsfile = Jenkinsfile
+		LICENCE.md = LICENCE.md
 		README.md = README.md
 		toc.yml = toc.yml
 	EndProjectSection
@@ -22,7 +24,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{5C3E0BA4-8
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Dangl.AspNetCore.FileHandling.Tests", "test\Dangl.AspNetCore.FileHandling.Tests\Dangl.AspNetCore.FileHandling.Tests.csproj", "{9218807C-8CA0-4C07-BAE9-1ACDA7AD8DE7}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dangl.AspNetCore.FileHandling.Azure", "src\Dangl.AspNetCore.FileHandling.Azure\Dangl.AspNetCore.FileHandling.Azure.csproj", "{B8EF38E6-4D8A-440C-A866-CD29AA650B15}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Dangl.AspNetCore.FileHandling.Azure", "src\Dangl.AspNetCore.FileHandling.Azure\Dangl.AspNetCore.FileHandling.Azure.csproj", "{B8EF38E6-4D8A-440C-A866-CD29AA650B15}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
