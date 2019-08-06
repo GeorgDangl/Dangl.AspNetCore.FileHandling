@@ -5,7 +5,7 @@
         {
           "src": "./src",
           "files": [
-            "Dangl.AspNetCore.FileHandling/*.csproj"
+            "**/*.csproj"
           ],
           "exclude": [
             "**/bin/**",

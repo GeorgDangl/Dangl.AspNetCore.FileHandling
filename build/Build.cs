@@ -275,11 +275,6 @@ class Build : NukeBuild
         .DependsOn(Restore)
         .Executes(() =>
         {
-            // So it uses a fixed, known version of MsBuild to generate the metadata. Otherwise,
-            // updates of dotnet or Visual Studio could introduce incompatibilities and generation failures
-            var dotnetPath = Path.GetDirectoryName(ToolPathResolver.GetPathExecutable("dotnet.exe"));
-            var msBuildPath = Path.Combine(dotnetPath, "sdk", DocFxDotNetSdkVersion, "MSBuild.dll");
-            SetVariable("MSBUILD_EXE_PATH", msBuildPath);
             DocFXMetadata(x => x.SetProjects(DocFxFile));
         });
 
