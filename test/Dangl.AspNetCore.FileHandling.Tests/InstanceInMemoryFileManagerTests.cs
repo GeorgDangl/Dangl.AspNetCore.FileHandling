@@ -6,52 +6,47 @@ using Xunit;
 
 namespace Dangl.AspNetCore.FileHandling.Tests
 {
-    public class InMemoryFileManagerTests : IDisposable
+    public class InstanceInMemoryFileManagerTests
     {
         [Fact]
         public async Task CanAccessSavedStreamEvenWhenOriginalIsDisposed()
         {
-            var inMemoryFileManager = new InMemoryFileManager();
+            var inMemoryFileManager = new InstanceInMemoryFileManager();
             using (var originalMemStream = new MemoryStream(new byte[] { 1, 2, 3, 4, 5 }))
             {
                 await inMemoryFileManager.SaveFileAsync(Guid.NewGuid(), "my-container", "file.bin", originalMemStream);
             }
-            var savedFile = InMemoryFileManager.SavedFiles.Single();
+            var savedFile = inMemoryFileManager.SavedFiles.Single();
             Assert.Equal(5, savedFile.FileStream.Length); // If it can be accessed, everything's fine
         }
 
         [Fact]
         public async Task CanClearFiles()
         {
-            var inMemoryFileManager = new InMemoryFileManager();
+            var inMemoryFileManager = new InstanceInMemoryFileManager();
             using (var originalMemStream = new MemoryStream(new byte[] { 1, 2, 3, 4, 5 }))
             {
                 await inMemoryFileManager.SaveFileAsync(Guid.NewGuid(), "my-container", "file.bin", originalMemStream);
             }
 
-            Assert.Single(InMemoryFileManager.SavedFiles);
-            InMemoryFileManager.ClearFiles();
-            Assert.Empty(InMemoryFileManager.SavedFiles);
+            Assert.Single(inMemoryFileManager.SavedFiles);
+            inMemoryFileManager.ClearFiles();
+            Assert.Empty(inMemoryFileManager.SavedFiles);
         }
 
         [Fact]
-        public void TwoInstancesShareData()
+        public void TwoInstancesDontShareData()
         {
-            var firstManager = new InMemoryFileManager();
-            var secondManager = new InMemoryFileManager();
+            var firstManager = new InstanceInMemoryFileManager();
+            var secondManager = new InstanceInMemoryFileManager();
 
-            Assert.Empty(InMemoryFileManager.SavedFiles);
-            Assert.Empty(InMemoryFileManager.SavedFiles);
+            Assert.Empty(firstManager.SavedFiles);
+            Assert.Empty(secondManager.SavedFiles);
 
             firstManager.SaveFileAsync("my-container", "file.bin", new MemoryStream());
 
-            Assert.Single(InMemoryFileManager.SavedFiles);
-            Assert.Single(InMemoryFileManager.SavedFiles);
-        }
-
-        public void Dispose()
-        {
-            InMemoryFileManager.ClearFiles();
+            Assert.Single(firstManager.SavedFiles);
+            Assert.Empty(secondManager.SavedFiles);
         }
     }
 }
