@@ -68,8 +68,6 @@ class Build : NukeBuild
     string DocFxFile => SolutionDirectory / "docfx.json";
     string ChangeLogFile => RootDirectory / "CHANGELOG.md";
 
-    readonly string DocFxDotNetSdkVersion = "2.1.4";
-
     Target Clean => _ => _
             .Executes(() =>
             {
