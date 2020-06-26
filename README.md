@@ -26,6 +26,12 @@ The `DiskFileHandler` works by storing files on a disk drive.
 
 For test purposes, the `InMemoryFileHandler` offers additional features like `ClearFiles()` to reset all saved files and a property `SavedFiles` to access all saved files.
 
+### InstanceInMemoryFileManager
+
+For test purposes, the `InstanceInMemoryFileManager` offers additional features like `ClearFiles()` to reset all saved files and a property `SavedFiles` to access all saved files.
+
+This implementation will keep its internal cache per instance, thus making it possible to run parallel tests that are independent of eachother.
+
 ### AzureBlobFileManager
 
 This implementation works against Azure Blob Storage. Additionally, it has a `Task<RepositoryResult> EnsureContainerCreated(string container)` for initialization purposes.

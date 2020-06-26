@@ -2,6 +2,9 @@
 
 All notable changes to **Dangl.AspNetCore.FileHandling** are documented here.
 
+## v0.4.0:
+- Add the `InstanceInMemoryFileManager` class. This is different to the `InMemoryFileManager` in that it keeps its internal cache only per instance and not in a static field
+
 ## v0.3.0:
 - Replace deprecated `WindowsAzure.Storage` dependency with `Microsoft.Azure.Storage.Blob` package
 
