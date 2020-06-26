@@ -8,22 +8,23 @@ using Dangl.Data.Shared;
 namespace Dangl.AspNetCore.FileHandling
 {
     /// <summary>
-    /// In memory implementation for testing. This implementation will keep all files
-    /// in a static list.
+    /// In memory implementation for testing. This implementation will keep the
+    /// files in a list per instance, thus allowing to have parallel tests with
+    /// separate data.
     /// </summary>
-    public class InMemoryFileManager : IFileManager
+    public class InstanceInMemoryFileManager : IFileManager
     {
         /// <summary>
         /// Gives access to all cached files
         /// </summary>
-        public static IReadOnlyList<InMemorySavedFile> SavedFiles => _savedFiles.AsReadOnly();
-        private static List<InMemorySavedFile> _savedFiles = new List<InMemorySavedFile>();
+        public IReadOnlyList<InMemorySavedFile> SavedFiles => _savedFiles.AsReadOnly();
+        private List<InMemorySavedFile> _savedFiles = new List<InMemorySavedFile>();
 
 
         /// <summary>
         /// Removes all cached files
         /// </summary>
-        public static void ClearFiles()
+        public void ClearFiles()
         {
             _savedFiles.ForEach(s => s.FileStream.Dispose());
             _savedFiles.Clear();
