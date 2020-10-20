@@ -1,9 +1,12 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
+using Azure;
+using Azure.Storage;
+using Azure.Storage.Blobs;
+using Azure.Storage.Sas;
 using Dangl.Data.Shared;
-using Microsoft.Azure.Storage;
-using Microsoft.Azure.Storage.Blob;
 
 namespace Dangl.AspNetCore.FileHandling.Azure
 {
@@ -12,7 +15,8 @@ namespace Dangl.AspNetCore.FileHandling.Azure
     /// </summary>
     public class AzureBlobFileManager : IFileManager
     {
-        private readonly CloudBlobClient _blobClient;
+        private readonly BlobServiceClient _blobClient;
+        private readonly string _accessKey;
 
         /// <summary>
         /// Instantiates this class with a connection to Azure blob storage
@@ -20,8 +24,13 @@ namespace Dangl.AspNetCore.FileHandling.Azure
         /// <param name="storageConnectionString"></param>
         public AzureBlobFileManager(string storageConnectionString)
         {
-            var storageAccount = CloudStorageAccount.Parse(storageConnectionString);
-            _blobClient = storageAccount.CreateCloudBlobClient();
+            _blobClient = new BlobServiceClient(storageConnectionString);
+
+            _accessKey = storageConnectionString
+                .Split(';')
+                .Where(s => s.StartsWith("AccountKey=", StringComparison.InvariantCultureIgnoreCase))
+                .Select(s => s.Substring("AccountKey=".Length))
+                .FirstOrDefault();
         }
 
         /// <summary>
@@ -57,7 +66,8 @@ namespace Dangl.AspNetCore.FileHandling.Azure
             try
             {
                 var memoryStream = new MemoryStream();
-                await blobReference.DownloadToStreamAsync(memoryStream);
+                var blobResponse = await blobReference.DownloadAsync();
+                await blobResponse.Value.Content.CopyToAsync(memoryStream);
                 memoryStream.Position = 0;
                 return RepositoryResult<Stream>.Success(memoryStream);
             }
@@ -112,11 +122,11 @@ namespace Dangl.AspNetCore.FileHandling.Azure
             return UploadBlobReference(blobReference, fileStream);
         }
 
-        private async Task<RepositoryResult> UploadBlobReference(CloudBlockBlob blobReference, Stream fileStream)
+        private async Task<RepositoryResult> UploadBlobReference(BlobClient blobReference, Stream fileStream)
         {
             try
             {
-                await blobReference.UploadFromStreamAsync(fileStream);
+                await blobReference.UploadAsync(fileStream);
                 return RepositoryResult.Success();
             }
             catch (Exception e)
@@ -132,32 +142,32 @@ namespace Dangl.AspNetCore.FileHandling.Azure
         /// <returns></returns>
         public async Task<RepositoryResult> EnsureContainerCreated(string container)
         {
-            await _blobClient.GetContainerReference(container)
+            await _blobClient.GetBlobContainerClient(container)
                 .CreateIfNotExistsAsync();
             return RepositoryResult.Success();
         }
 
-        private CloudBlockBlob GetBlobReference(string container, string fileName)
+        private BlobClient GetBlobReference(string container, string fileName)
         {
             var filePath = fileName
                     .WithMaxLength(FileHandlerDefaults.FILE_PATH_MAX_LENGTH);
-            var containerReference = _blobClient.GetContainerReference(container);
-            return containerReference.GetBlockBlobReference(filePath);
+            var containerReference = _blobClient.GetBlobContainerClient(container);
+            return containerReference.GetBlobClient(filePath);
         }
 
-        private CloudBlockBlob GetBlobReference(Guid fileId, string container, string fileName)
+        private BlobClient GetBlobReference(Guid fileId, string container, string fileName)
         {
             var filePath = $"{fileId.ToString().ToLowerInvariant()}_{fileName}"
                     .WithMaxLength(FileHandlerDefaults.FILE_PATH_MAX_LENGTH);
-            var containerReference = _blobClient.GetContainerReference(container);
-            return containerReference.GetBlockBlobReference(filePath);
+            var containerReference = _blobClient.GetBlobContainerClient(container);
+            return containerReference.GetBlobClient(filePath);
         }
 
-        private CloudBlockBlob GetTimeStampedBlobReference(DateTime fileDate, string container, string fileName)
+        private BlobClient GetTimeStampedBlobReference(DateTime fileDate, string container, string fileName)
         {
             var filePath = TimeStampedFilePathBuilder.GetTimeStampedFilePath(fileDate, fileName);
-            var containerReference = _blobClient.GetContainerReference(container);
-            return containerReference.GetBlockBlobReference(filePath);
+            var containerReference = _blobClient.GetBlobContainerClient(container);
+            return containerReference.GetBlobClient(filePath);
         }
 
         /// <summary>
@@ -220,6 +230,93 @@ namespace Dangl.AspNetCore.FileHandling.Azure
             {
                 return RepositoryResult.Fail();
             }
+        }
+
+        /// <summary>
+        /// Creates a SAS upload link to allow direct blob upload
+        /// </summary>
+        /// <param name="container"></param>
+        /// <param name="fileName"></param>
+        /// <param name="validForMinutes"></param>
+        /// <returns></returns>
+        public Task<RepositoryResult<SasUploadLink>> GetSasUploadLinkAsync(string container, string fileName, int validForMinutes = 5)
+        {
+            var filePath = fileName
+                    .WithMaxLength(FileHandlerDefaults.FILE_PATH_MAX_LENGTH);
+            return GetSasUploadLinkInternalAsync(filePath, container, validForMinutes);
+        }
+
+        /// <summary>
+        /// Creates a SAS upload link to allow direct blob upload
+        /// </summary>
+        /// <param name="fileId"></param>
+        /// <param name="container"></param>
+        /// <param name="fileName"></param>
+        /// <param name="validForMinutes"></param>
+        /// <returns></returns>
+        public Task<RepositoryResult<SasUploadLink>> GetSasUploadLinkAsync(Guid fileId, string container, string fileName, int validForMinutes = 5)
+        {
+            var filePath = $"{fileId.ToString().ToLowerInvariant()}_{fileName}"
+                    .WithMaxLength(FileHandlerDefaults.FILE_PATH_MAX_LENGTH);
+            return GetSasUploadLinkInternalAsync(filePath, container, validForMinutes);
+        }
+
+        /// <summary>
+        /// Creates a SAS upload link to allow direct blob upload
+        /// </summary>
+        /// <param name="fileDate"></param>
+        /// <param name="container"></param>
+        /// <param name="fileName"></param>
+        /// <param name="validForMinutes"></param>
+        /// <returns></returns>
+        public Task<RepositoryResult<SasUploadLink>> GetSasUploadLinkAsync(DateTime fileDate, string container, string fileName, int validForMinutes = 5)
+        {
+            var filePath = TimeStampedFilePathBuilder.GetTimeStampedFilePath(fileDate, fileName);
+            return GetSasUploadLinkInternalAsync(filePath, container, validForMinutes);
+        }
+
+        private Task<RepositoryResult<SasUploadLink>> GetSasUploadLinkInternalAsync(string filePath, string container, int validForMinutes)
+        {
+            // Taken from the docs at
+            // https://docs.microsoft.com/en-us/azure/storage/blobs/storage-blob-user-delegation-sas-create-dotnet
+
+            if (validForMinutes <= 0)
+            {
+                return Task.FromResult(RepositoryResult<SasUploadLink>.Fail("The validity in minutes must be greater than zero"));
+            }
+
+            var validUntil = DateTimeOffset.UtcNow.AddMinutes(validForMinutes);
+            BlobSasBuilder sasBuilder = new BlobSasBuilder()
+            {
+                BlobContainerName = container,
+                BlobName = filePath,
+                Resource = "b",
+                StartsOn = DateTimeOffset.UtcNow,
+                ExpiresOn = validUntil
+            };
+            sasBuilder.SetPermissions(BlobSasPermissions.Create | BlobSasPermissions.Write);
+
+            var key = new StorageSharedKeyCredential(_blobClient.AccountName, _accessKey);
+
+            // Use the key to get the SAS token.
+            string sasToken = sasBuilder.ToSasQueryParameters(key).ToString();
+
+            // Construct the full URI, including the SAS token.
+            UriBuilder fullUri = new UriBuilder()
+            {
+                Scheme = "https",
+                Host = $"{_blobClient.AccountName}.blob.core.windows.net",
+                Path = $"{container}/{filePath}",
+                Query = sasToken
+            };
+
+            var uploadLink = new SasUploadLink
+            {
+                UploadLink = fullUri.ToString(),
+                ValidUntil = validUntil
+            };
+
+            return Task.FromResult(RepositoryResult<SasUploadLink>.Success(uploadLink));
         }
     }
 }
