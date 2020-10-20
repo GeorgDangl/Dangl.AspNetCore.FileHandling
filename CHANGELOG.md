@@ -2,6 +2,10 @@
 
 All notable changes to **Dangl.AspNetCore.FileHandling** are documented here.
 
+## v0.5.0:
+- Switch to `Azure.Storage.Blobs` to replace the deprecated Azure SDK
+- Add `GetSasUploadLinkAsync` method to `AzureBlobFileManager` to allow direct upload to blob storage for clients so the service does not have to proxy the file upload
+
 ## v0.4.0:
 - Add the `InstanceInMemoryFileManager` class. This is different to the `InMemoryFileManager` in that it keeps its internal cache only per instance and not in a static field
 

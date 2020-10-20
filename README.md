@@ -37,6 +37,24 @@ This implementation will keep its internal cache per instance, thus making it po
 This implementation works against Azure Blob Storage. Additionally, it has a `Task<RepositoryResult> EnsureContainerCreated(string container)` for initialization purposes.
 Azure Blob containers must be created before they can be accessed.
 
+#### SAS Uploads
+
+To directly upload files to Azure Blob Storage, you can use the `AzureBlobFileManager` to generate SAS links:
+
+Example:
+
+```csharp
+var fileHandler = new AzureBlobFileManager(blobStorageConnectionString);
+await fileHandler.EnsureContainerCreated(containerName);
+
+var sasLink = await fileHandler.GetSasUploadLinkAsync(containerName, fileName);
+if (sasLink.IsSuccess)
+{
+    var sasBlobClient = new BlobClient(new Uri(sasLink.Value.UploadLink));
+    var uploadResponse = await sasBlobClient.UploadAsync(fileStream);
+}
+```
+
 ### StringExtensions
 
 The `StringExtensions` class has a static extension method `string WithMaxLength(this string value, int maxLength)`.
