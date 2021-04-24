@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -286,7 +286,7 @@ namespace Dangl.AspNetCore.FileHandling.Azure
             }
 
             var validUntil = DateTimeOffset.UtcNow.AddMinutes(validForMinutes);
-            BlobSasBuilder sasBuilder = new BlobSasBuilder()
+            var sasBuilder = new BlobSasBuilder()
             {
                 BlobContainerName = container,
                 BlobName = filePath,
@@ -298,25 +298,75 @@ namespace Dangl.AspNetCore.FileHandling.Azure
 
             var key = new StorageSharedKeyCredential(_blobClient.AccountName, _accessKey);
 
-            // Use the key to get the SAS token.
-            string sasToken = sasBuilder.ToSasQueryParameters(key).ToString();
-
             // Construct the full URI, including the SAS token.
-            UriBuilder fullUri = new UriBuilder()
+            var blobReference = GetBlobReference(container, filePath);
+            var blobUri = new BlobUriBuilder(blobReference.Uri)
             {
-                Scheme = "https",
-                Host = $"{_blobClient.AccountName}.blob.core.windows.net",
-                Path = $"{container}/{filePath}",
-                Query = sasToken
-            };
+                // Use the key to get the SAS token.
+                Sas = sasBuilder.ToSasQueryParameters(key),
+                BlobContainerName = container,
+                BlobName = filePath
+            }
+            .ToUri();
 
             var uploadLink = new SasUploadLink
             {
-                UploadLink = fullUri.ToString(),
+                UploadLink = blobUri.ToString(),
                 ValidUntil = validUntil
             };
 
             return Task.FromResult(RepositoryResult<SasUploadLink>.Success(uploadLink));
+        }
+
+        /// <summary>
+        /// Checks if the file exists
+        /// </summary>
+        /// <param name="container"></param>
+        /// <param name="fileName"></param>
+        /// <returns></returns>
+        public Task<RepositoryResult<bool>> CheckIfFileExistsAsync(string container, string fileName)
+        {
+            var blobReference = GetBlobReference(container, fileName);
+            return InternalCheckIfFileExistsAsync(blobReference);
+        }
+
+        /// <summary>
+        /// Checks if the file exists
+        /// </summary>
+        /// <param name="fileId"></param>
+        /// <param name="container"></param>
+        /// <param name="fileName"></param>
+        /// <returns></returns>
+        public Task<RepositoryResult<bool>> CheckIfFileExistsAsync(Guid fileId, string container, string fileName)
+        {
+            var blobReference = GetBlobReference(fileId, container, fileName);
+            return InternalCheckIfFileExistsAsync(blobReference);
+        }
+
+        /// <summary>
+        /// Checks if the file exists
+        /// </summary>
+        /// <param name="fileDate"></param>
+        /// <param name="container"></param>
+        /// <param name="fileName"></param>
+        /// <returns></returns>
+        public Task<RepositoryResult<bool>> CheckIfFileExistsAsync(DateTime fileDate, string container, string fileName)
+        {
+            var blobReference = GetTimeStampedBlobReference(fileDate, container, fileName);
+            return InternalCheckIfFileExistsAsync(blobReference);
+        }
+
+        private async Task<RepositoryResult<bool>> InternalCheckIfFileExistsAsync(BlobClient blobReference)
+        {
+            try
+            {
+                var blobExists = await blobReference.ExistsAsync();
+                return RepositoryResult<bool>.Success(blobExists);
+            }
+            catch (Exception e)
+            {
+                return RepositoryResult<bool>.Fail(e.ToString());
+            }
         }
     }
 }

@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.27703.2026
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.31205.134
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = ".build", "build\.build.csproj", "{D6D8605E-62A1-4D53-ADB0-A9FF56E89620}"
 EndProject
@@ -26,6 +26,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Dangl.AspNetCore.FileHandli
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Dangl.AspNetCore.FileHandling.Azure", "src\Dangl.AspNetCore.FileHandling.Azure\Dangl.AspNetCore.FileHandling.Azure.csproj", "{B8EF38E6-4D8A-440C-A866-CD29AA650B15}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dangl.AspNetCore.FileHandling.Azure.IntegrationTests", "test\Dangl.AspNetCore.FileHandling.Azure.IntegrationTests\Dangl.AspNetCore.FileHandling.Azure.IntegrationTests.csproj", "{A6C32C64-3685-4718-A656-5C86100B00E8}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -46,6 +48,10 @@ Global
 		{B8EF38E6-4D8A-440C-A866-CD29AA650B15}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B8EF38E6-4D8A-440C-A866-CD29AA650B15}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B8EF38E6-4D8A-440C-A866-CD29AA650B15}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A6C32C64-3685-4718-A656-5C86100B00E8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A6C32C64-3685-4718-A656-5C86100B00E8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A6C32C64-3685-4718-A656-5C86100B00E8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A6C32C64-3685-4718-A656-5C86100B00E8}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -54,6 +60,7 @@ Global
 		{F87473C2-D42B-4FA7-A106-FBBBE648C9B2} = {DBDC183A-4F94-4673-AE43-4CE7D20B23FA}
 		{9218807C-8CA0-4C07-BAE9-1ACDA7AD8DE7} = {5C3E0BA4-8E00-43B7-BE49-9ED4D8C4E717}
 		{B8EF38E6-4D8A-440C-A866-CD29AA650B15} = {DBDC183A-4F94-4673-AE43-4CE7D20B23FA}
+		{A6C32C64-3685-4718-A656-5C86100B00E8} = {5C3E0BA4-8E00-43B7-BE49-9ED4D8C4E717}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {90A98B2F-A03B-4FD1-97DF-0CFCC2E86300}

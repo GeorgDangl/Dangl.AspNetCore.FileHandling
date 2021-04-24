@@ -2,6 +2,10 @@
 
 All notable changes to **Dangl.AspNetCore.FileHandling** are documented here.
 
+## v0.6.0:
+- Added `CheckIfFileExistsAsync` to the `IFileManager` interface
+- The Azure Blob SAS link generation does now also work with non-Azure hosted endpoints and is now covered by an integration test
+
 ## v0.5.0:
 - Switch to `Azure.Storage.Blobs` to replace the deprecated Azure SDK
 - Add `GetSasUploadLinkAsync` method to `AzureBlobFileManager` to allow direct upload to blob storage for clients so the service does not have to proxy the file upload

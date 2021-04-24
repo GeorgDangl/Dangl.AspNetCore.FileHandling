@@ -34,6 +34,8 @@ using static Nuke.Common.Tools.ReportGenerator.ReportGeneratorTasks;
 using static Nuke.GitHub.ChangeLogExtensions;
 using static Nuke.GitHub.GitHubTasks;
 using static Nuke.WebDocu.WebDocuTasks;
+using static Nuke.Common.Tools.Docker.DockerTasks;
+using Nuke.Common.Tools.Docker;
 
 class Build : NukeBuild
 {
@@ -42,7 +44,7 @@ class Build : NukeBuild
     [Parameter] readonly string KeyVaultBaseUrl;
     [Parameter] readonly string KeyVaultClientId;
     [Parameter] readonly string KeyVaultClientSecret;
-    [GitVersion(Framework = "netcoreapp3.1")] readonly GitVersion GitVersion;
+    [GitVersion(Framework = "net5.0")] readonly GitVersion GitVersion;
     [GitRepository] readonly GitRepository GitRepository;
     [KeyVault] readonly KeyVault KeyVault;
 
@@ -113,7 +115,7 @@ class Build : NukeBuild
                     .SetVersion(GitVersion.NuGetVersion));
             });
 
-    Target Coverage => _ => _
+    Target Tests => _ => _
         .DependsOn(Compile)
         .Executes(async () =>
         {
@@ -121,10 +123,12 @@ class Build : NukeBuild
             var dotnetPath = ToolPathResolver.GetPathExecutable("dotnet");
             var snapshotIndex = 0;
 
-            DotCoverCover(c => c
-                    .SetTargetExecutable(dotnetPath)
-                    .SetFilters("+:Dangl.AspNetCore.FileHandling")
-                    .SetAttributeFilters("System.CodeDom.Compiler.GeneratedCodeAttribute")
+            // That's required since the Azure integration tests depend on that image
+            DockerPull(c => c.SetName("mcr.microsoft.com/azure-storage/azurite"));
+
+            DotNetTest(c => c
+                .SetNoBuild(true)
+                .SetTestAdapterPath(".")
                     .CombineWith(cc => testProjects.SelectMany(testProject =>
                     {
                         var projectDirectory = Path.GetDirectoryName(testProject);
@@ -133,39 +137,13 @@ class Build : NukeBuild
                         {
                             snapshotIndex++;
                             return cc
-                                .SetTargetWorkingDirectory(projectDirectory)
-                                .SetOutputFile(OutputDirectory / $"coverage{snapshotIndex:00}.snapshot")
-                                .SetTargetArguments($"test --no-build -f {targetFramework} --test-adapter-path:. \"--logger:xunit;LogFilePath={OutputDirectory}/{snapshotIndex}_testresults-{targetFramework}.xml\"");
+                                .SetProcessWorkingDirectory(projectDirectory)
+                                .SetFramework(targetFramework)
+                                .SetLogger($"xunit;LogFilePath={OutputDirectory}/{snapshotIndex}_testresults-{targetFramework}.xml");
                         });
                     })), degreeOfParallelism: System.Environment.ProcessorCount);
 
             PrependFrameworkToTestresults();
-
-            var snapshots = GlobFiles(OutputDirectory, "*.snapshot")
-               .Aggregate((c, n) => c + ";" + n);
-
-            DotCoverMerge(c => c
-                .SetSource(snapshots)
-                .SetOutputFile(OutputDirectory / "coverage.snapshot"));
-
-            DotCoverReport(c => c
-                .SetSource(OutputDirectory / "coverage.snapshot")
-                .SetOutputFile(OutputDirectory / "coverage.xml")
-                .SetReportType(DotCoverReportType.DetailedXml));
-
-            // This is the report that's pretty and visualized in Jenkins
-            ReportGenerator(c => c
-                .SetFramework("netcoreapp3.0")
-                .SetReports(OutputDirectory / "coverage.xml")
-                .SetTargetDirectory(OutputDirectory / "CoverageReport"));
-
-            // This is the report in Cobertura format that integrates so nice in Jenkins
-            // dashboard and allows to extract more metrics and set build health based
-            // on coverage readings
-            await DotCoverToCobertura(s => s
-                    .SetInputFile(OutputDirectory / "coverage.xml")
-                    .SetOutputFile(OutputDirectory / "cobertura_coverage.xml"))
-                .ConfigureAwait(false);
         });
 
     private IEnumerable<string> GetTestFrameworksForProjectFile(string projectFile)
@@ -181,7 +159,7 @@ class Build : NukeBuild
     private void PrependFrameworkToTestresults()
     {
         var testResults = GlobFiles(OutputDirectory, "*testresults*.xml").ToList();
-        Logger.Log(LogLevel.Normal, $"Found {testResults.Count} test result files on which to append the framework.");
+        Logger.Normal($"Found {testResults.Count} test result files on which to append the framework.");
         foreach (var testResultFile in testResults)
         {
             var frameworkName = GetFrameworkNameFromFilename(testResultFile);
@@ -205,7 +183,7 @@ class Build : NukeBuild
         // since in Jenkins, the format is internally converted to JUnit. Aterwards, results with the same timestamps are
         // ignored. See here for how the code is translated to JUnit format by the Jenkins plugin:
         // https://github.com/jenkinsci/xunit-plugin/blob/d970c50a0501f59b303cffbfb9230ba977ce2d5a/src/main/resources/org/jenkinsci/plugins/xunit/types/xunitdotnet-2.0-to-junit.xsl#L75-L79
-        Logger.Log(LogLevel.Normal, "Updating \"run-time\" attributes in assembly entries to prevent Jenkins to treat them as duplicates");
+        Logger.Normal("Updating \"run-time\" attributes in assembly entries to prevent Jenkins to treat them as duplicates");
         var firstXdoc = XDocument.Load(testResults[0]);
         var runtime = DateTime.Now;
         var firstAssemblyNodes = firstXdoc.Root.Elements().Where(e => e.Name.LocalName == "assembly");
@@ -253,7 +231,7 @@ class Build : NukeBuild
                 {
                     DotNetNuGetPush(s => s
                         // Need to set it here, otherwise it takes the one from NUKEs .tmp directory
-                        .SetToolPath(ToolPathResolver.GetPathExecutable("dotnet"))
+                        .SetProcessToolPath(ToolPathResolver.GetPathExecutable("dotnet"))
                         .SetTargetPath(x)
                         .SetSource(PublicMyGetSource)
                         .SetApiKey(PublicMyGetApiKey));
@@ -263,7 +241,7 @@ class Build : NukeBuild
                         // Stable releases are published to NuGet
                         DotNetNuGetPush(s => s
                             // Need to set it here, otherwise it takes the one from NUKEs .tmp directory
-                            .SetToolPath(ToolPathResolver.GetPathExecutable("dotnet"))
+                            .SetProcessToolPath(ToolPathResolver.GetPathExecutable("dotnet"))
                             .SetTargetPath(x)
                             .SetSource("https://api.nuget.org/v3/index.json")
                             .SetApiKey(NuGetApiKey));
@@ -276,7 +254,7 @@ class Build : NukeBuild
         .Executes(() =>
         {
             DocFXMetadata(x => x
-                .SetEnvironmentVariable("DOCFX_SOURCE_BRANCH_NAME", GitVersion.BranchName)
+                .SetProcessEnvironmentVariable("DOCFX_SOURCE_BRANCH_NAME", GitVersion.BranchName)
                 .SetProjects(DocFxFile));
         });
 
@@ -294,7 +272,7 @@ class Build : NukeBuild
             File.Copy(SolutionDirectory / "README.md", SolutionDirectory / "index.md");
 
             DocFXBuild(x => x
-                .SetEnvironmentVariable("DOCFX_SOURCE_BRANCH_NAME", GitVersion.BranchName)
+                .SetProcessEnvironmentVariable("DOCFX_SOURCE_BRANCH_NAME", GitVersion.BranchName)
                 .SetConfigFile(DocFxFile));
 
             File.Delete(SolutionDirectory / "index.md");

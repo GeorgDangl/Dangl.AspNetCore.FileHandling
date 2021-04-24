@@ -1,8 +1,7 @@
 # Dangl.AspNetCore.FileHandling
 
-[![Build Status](https://jenkins.dangl.me/buildStatus/icon?job=Dangl.AspNetCore.FileHandling/develop)](https://jenkins.dangl.me/job/Dangl.AspNetCore.FileHandling/)  
+[![Build Status](https://jenkins.dangl.me/buildStatus/icon?job=GeorgDangl%2FDangl.AspNetCore.FileHandling%2Fdevelop)](https://jenkins.dangl.me/job/GeorgDangl/job/Dangl.AspNetCore.FileHandling/job/develop/)  
 [![NuGet](https://img.shields.io/nuget/v/Dangl.AspNetCore.FileHandling.svg)](https://www.nuget.org/packages/Dangl.AspNetCore.FileHandling)  
-[![Built with Nuke](http://nuke.build/rounded)](https://www.nuke.build)
 
 [Link to documentation](https://docs.dangl-it.com/Projects/Dangl.AspNetCore.FileHandling)
 
@@ -14,17 +13,17 @@ The **Dangl.AspNetCore.FileHandling** package offers reusable tasks for projects
 
 The `FileHandlerDefaults` class defines limits to adhere to when using file and container names. It is enforced to ensure a compatibility with Azure blob storage.
 
-### IFileHandler
+### IFileManager
 
-The `IFileHandler` interface defines how to store and retrieve files.
+The `IFileManager` interface defines how to store and retrieve files.
 
-### DiskFileHandler
+### DiskFileManager
 
-The `DiskFileHandler` works by storing files on a disk drive.
+The `DiskFileManager` works by storing files on a disk drive.
 
-### InMemoryFileHandler
+### InMemoryFileManager
 
-For test purposes, the `InMemoryFileHandler` offers additional features like `ClearFiles()` to reset all saved files and a property `SavedFiles` to access all saved files.
+For test purposes, the `InMemoryFileManager` offers additional features like `ClearFiles()` to reset all saved files and a property `SavedFiles` to access all saved files.
 
 ### InstanceInMemoryFileManager
 
@@ -44,10 +43,10 @@ To directly upload files to Azure Blob Storage, you can use the `AzureBlobFileMa
 Example:
 
 ```csharp
-var fileHandler = new AzureBlobFileManager(blobStorageConnectionString);
-await fileHandler.EnsureContainerCreated(containerName);
+var fileManager = new AzureBlobFileManager(blobStorageConnectionString);
+await fileManager.EnsureContainerCreated(containerName);
 
-var sasLink = await fileHandler.GetSasUploadLinkAsync(containerName, fileName);
+var sasLink = await fileManager.GetSasUploadLinkAsync(containerName, fileName);
 if (sasLink.IsSuccess)
 {
     var sasBlobClient = new BlobClient(new Uri(sasLink.Value.UploadLink));

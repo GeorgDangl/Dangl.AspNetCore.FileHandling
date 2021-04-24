@@ -12,8 +12,13 @@ pipeline {
     }
     stages {
         stage ('Test') {
+			agent {
+			    node {
+			        label 'linux'
+			    }
+			}
             steps {
-                powershell './build.ps1 Coverage -configuration Debug'
+                sh 'bash build.sh Tests -configuration Debug'
             }
             post {
                 always {
@@ -35,23 +40,8 @@ pipeline {
                             skipped(failureNewThreshold: '0', failureThreshold: '0', unstableNewThreshold: '0', unstableThreshold: '0')
                         ],
                         tools: [
-                            xUnitDotNet(deleteOutputFiles: true, failIfNotNew: true, pattern: '**/*testresults.xml', stopProcessingIfError: true)
+                            xUnitDotNet(deleteOutputFiles: true, failIfNotNew: true, pattern: '**/*testresults*.xml', stopProcessingIfError: true)
                         ])
-                    cobertura(
-                        coberturaReportFile: 'output/cobertura_coverage.xml',
-                        failUnhealthy: false,
-                        failUnstable: false,
-                        maxNumberOfBuilds: 0,
-                        onlyStable: false,
-                        zoomCoverageChart: false)
-                    publishHTML([
-                        allowMissing: false,
-                        alwaysLinkToLastBuild: false,
-                        keepAll: false,
-                        reportDir: 'output/CoverageReport',
-                        reportFiles: 'index.htm',
-                        reportName: 'Coverage Report',
-                        reportTitles: ''])
                 }
             }
         }

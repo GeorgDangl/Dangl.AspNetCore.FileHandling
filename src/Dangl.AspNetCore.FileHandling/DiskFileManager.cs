@@ -210,5 +210,60 @@ namespace Dangl.AspNetCore.FileHandling
                 return Task.FromResult(RepositoryResult.Fail());
             }
         }
+
+        /// <summary>
+        /// Checks if the file exists
+        /// </summary>
+        /// <param name="container"></param>
+        /// <param name="fileName"></param>
+        /// <returns></returns>
+        public Task<RepositoryResult<bool>> CheckIfFileExistsAsync(string container, string fileName)
+        {
+            return InternalCheckIfFileExistsAsync(null, container, fileName);
+        }
+
+        /// <summary>
+        /// Checks if the file exists
+        /// </summary>
+        /// <param name="fileId"></param>
+        /// <param name="container"></param>
+        /// <param name="fileName"></param>
+        /// <returns></returns>
+        public Task<RepositoryResult<bool>> CheckIfFileExistsAsync(Guid fileId, string container, string fileName)
+        {
+            return InternalCheckIfFileExistsAsync(fileId, container, fileName);
+        }
+
+        /// <summary>
+        /// Checks if the file exists
+        /// </summary>
+        /// <param name="fileDate"></param>
+        /// <param name="container"></param>
+        /// <param name="fileName"></param>
+        /// <returns></returns>
+        public Task<RepositoryResult<bool>> CheckIfFileExistsAsync(DateTime fileDate, string container, string fileName)
+        {
+            var timeStampedRelativePath = TimeStampedFilePathBuilder.GetTimeStampedFilePath(fileDate, fileName);
+            return InternalCheckIfFileExistsAsync(null, container, fileName);
+        }
+
+        private Task<RepositoryResult<bool>> InternalCheckIfFileExistsAsync(Guid? fileId, string container, string fileName)
+        {
+            var fileSavePath = GetFilePath(fileId, container, fileName);
+
+            try
+            {
+                if (!File.Exists(fileSavePath))
+                {
+                    return Task.FromResult(RepositoryResult<bool>.Success(false));
+                }
+
+                return Task.FromResult(RepositoryResult<bool>.Success(true));
+            }
+            catch (Exception e)
+            {
+                return Task.FromResult(RepositoryResult<bool>.Fail(e.ToString()));
+            }
+        }
     }
 }
