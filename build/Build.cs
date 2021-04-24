@@ -117,7 +117,7 @@ class Build : NukeBuild
 
     Target Tests => _ => _
         .DependsOn(Compile)
-        .Executes(async () =>
+        .Executes(() =>
         {
             var testProjects = GlobFiles(RootDirectory / "test", "**/*.csproj").ToList();
             var dotnetPath = ToolPathResolver.GetPathExecutable("dotnet");
