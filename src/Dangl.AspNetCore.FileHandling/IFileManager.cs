@@ -1,4 +1,4 @@
-﻿using Dangl.Data.Shared;
+using Dangl.Data.Shared;
 using System;
 using System.IO;
 using System.Threading.Tasks;
@@ -95,5 +95,31 @@ namespace Dangl.AspNetCore.FileHandling
         /// <param name="fileName"></param>
         /// <returns></returns>
         Task<RepositoryResult> DeleteFileAsync(DateTime fileDate, string container, string fileName);
+
+        /// <summary>
+        /// Checks if the file exists
+        /// </summary>
+        /// <param name="container"></param>
+        /// <param name="fileName"></param>
+        /// <returns></returns>
+        Task<RepositoryResult<bool>> CheckIfFileExistsAsync(string container, string fileName);
+
+        /// <summary>
+        /// Checks if the file exists
+        /// </summary>
+        /// <param name="fileId"></param>
+        /// <param name="container"></param>
+        /// <param name="fileName"></param>
+        /// <returns></returns>
+        Task<RepositoryResult<bool>> CheckIfFileExistsAsync(Guid fileId, string container, string fileName);
+
+        /// <summary>
+        /// Checks if the file exists
+        /// </summary>
+        /// <param name="fileDate"></param>
+        /// <param name="container"></param>
+        /// <param name="fileName"></param>
+        /// <returns></returns>
+        Task<RepositoryResult<bool>> CheckIfFileExistsAsync(DateTime fileDate, string container, string fileName);
     }
 }

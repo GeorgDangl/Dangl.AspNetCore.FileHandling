@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -317,6 +317,57 @@ namespace Dangl.AspNetCore.FileHandling.Azure
             };
 
             return Task.FromResult(RepositoryResult<SasUploadLink>.Success(uploadLink));
+        }
+
+        /// <summary>
+        /// Checks if the file exists
+        /// </summary>
+        /// <param name="container"></param>
+        /// <param name="fileName"></param>
+        /// <returns></returns>
+        public Task<RepositoryResult<bool>> CheckIfFileExistsAsync(string container, string fileName)
+        {
+            var blobReference = GetBlobReference(container, fileName);
+            return InternalCheckIfFileExistsAsync(blobReference);
+        }
+
+        /// <summary>
+        /// Checks if the file exists
+        /// </summary>
+        /// <param name="fileId"></param>
+        /// <param name="container"></param>
+        /// <param name="fileName"></param>
+        /// <returns></returns>
+        public Task<RepositoryResult<bool>> CheckIfFileExistsAsync(Guid fileId, string container, string fileName)
+        {
+            var blobReference = GetBlobReference(fileId, container, fileName);
+            return InternalCheckIfFileExistsAsync(blobReference);
+        }
+
+        /// <summary>
+        /// Checks if the file exists
+        /// </summary>
+        /// <param name="fileDate"></param>
+        /// <param name="container"></param>
+        /// <param name="fileName"></param>
+        /// <returns></returns>
+        public Task<RepositoryResult<bool>> CheckIfFileExistsAsync(DateTime fileDate, string container, string fileName)
+        {
+            var blobReference = GetTimeStampedBlobReference(fileDate, container, fileName);
+            return InternalCheckIfFileExistsAsync(blobReference);
+        }
+
+        private async Task<RepositoryResult<bool>> InternalCheckIfFileExistsAsync(BlobClient blobReference)
+        {
+            try
+            {
+                var blobExists = await blobReference.ExistsAsync();
+                return RepositoryResult<bool>.Success(blobExists);
+            }
+            catch (Exception e)
+            {
+                return RepositoryResult<bool>.Fail(e.ToString());
+            }
         }
     }
 }

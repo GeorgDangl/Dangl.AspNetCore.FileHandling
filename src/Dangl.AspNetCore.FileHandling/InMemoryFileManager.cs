@@ -188,5 +188,50 @@ namespace Dangl.AspNetCore.FileHandling
             }
             return Task.FromResult(RepositoryResult.Success());
         }
+
+        /// <summary>
+        /// Checks if the file exists
+        /// </summary>
+        /// <param name="container"></param>
+        /// <param name="fileName"></param>
+        /// <returns></returns>
+        public Task<RepositoryResult<bool>> CheckIfFileExistsAsync(string container, string fileName)
+        {
+            var fileExists = _savedFiles
+                .Any(f => f.Container == container
+                    && f.FileName == fileName);
+            return Task.FromResult(RepositoryResult<bool>.Success(fileExists));
+        }
+
+        /// <summary>
+        /// Checks if the file exists
+        /// </summary>
+        /// <param name="fileId"></param>
+        /// <param name="container"></param>
+        /// <param name="fileName"></param>
+        /// <returns></returns>
+        public Task<RepositoryResult<bool>> CheckIfFileExistsAsync(Guid fileId, string container, string fileName)
+        {
+            var fileExists = _savedFiles
+                .Any(f => f.Container == container
+                    && f.FileName == fileName
+                    && f.FileId == fileId);
+            return Task.FromResult(RepositoryResult<bool>.Success(fileExists));
+        }
+
+        /// <summary>
+        /// Checks if the file exists
+        /// </summary>
+        /// <param name="fileDate"></param>
+        /// <param name="container"></param>
+        /// <param name="fileName"></param>
+        /// <returns></returns>
+        public Task<RepositoryResult<bool>> CheckIfFileExistsAsync(DateTime fileDate, string container, string fileName)
+        {
+            var fileExists = _savedFiles
+                .Any(f => f.Container == container
+                    && f.FileName == fileName);
+            return Task.FromResult(RepositoryResult<bool>.Success(fileExists));
+        }
     }
 }
