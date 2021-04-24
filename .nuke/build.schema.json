@@ -93,11 +93,11 @@
               "BuildDocumentation",
               "Clean",
               "Compile",
-              "Coverage",
               "Pack",
               "PublishGitHubRelease",
               "Push",
               "Restore",
+              "Tests",
               "UploadDocumentation"
             ]
           }
@@ -116,11 +116,11 @@
               "BuildDocumentation",
               "Clean",
               "Compile",
-              "Coverage",
               "Pack",
               "PublishGitHubRelease",
               "Push",
               "Restore",
+              "Tests",
               "UploadDocumentation"
             ]
           }

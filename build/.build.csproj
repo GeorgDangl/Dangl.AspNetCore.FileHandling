@@ -15,11 +15,6 @@
     <PackageReference Include="Nuke.WebDocu" Version="3.0.1" />
     <PackageReference Include="Nuke.GitHub" Version="2.0.0" />
     <PackageReference Include="Dangl.Nuke.CoberturaConverter" Version="2.0.0" />
-    <PackageReference Include="JetBrains.dotCover.CommandLineTools" Version="2021.1.2">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
-    </PackageReference>
-    <PackageReference Include="ReportGenerator" Version="4.8.7" />
     <PackageReference Include="docfx.console" Version="2.57.2">
       <ExcludeAssets>build</ExcludeAssets>
       <PrivateAssets>all</PrivateAssets>

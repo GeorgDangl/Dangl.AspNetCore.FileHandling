@@ -126,10 +126,9 @@ class Build : NukeBuild
             // That's required since the Azure integration tests depend on that image
             DockerPull(c => c.SetName("mcr.microsoft.com/azure-storage/azurite"));
 
-            DotCoverCover(c => c
-                    .SetTargetExecutable(dotnetPath)
-                    .SetFilters("+:Dangl.AspNetCore.FileHandling")
-                    .SetAttributeFilters("System.CodeDom.Compiler.GeneratedCodeAttribute")
+            DotNetTest(c => c
+                .SetNoBuild(true)
+                .SetTestAdapterPath(".")
                     .CombineWith(cc => testProjects.SelectMany(testProject =>
                     {
                         var projectDirectory = Path.GetDirectoryName(testProject);
@@ -138,9 +137,9 @@ class Build : NukeBuild
                         {
                             snapshotIndex++;
                             return cc
-                                .SetTargetWorkingDirectory(projectDirectory)
-                                .SetOutputFile(OutputDirectory / $"coverage{snapshotIndex:00}.snapshot")
-                                .SetTargetArguments($"test --no-build -f {targetFramework} --test-adapter-path:. \"--logger:xunit;LogFilePath={OutputDirectory}/{snapshotIndex}_testresults-{targetFramework}.xml\"");
+                                .SetProcessWorkingDirectory(projectDirectory)
+                                .SetFramework(targetFramework)
+                                .SetLogger($"xunit;LogFilePath={OutputDirectory}/{snapshotIndex}_testresults-{targetFramework}.xml");
                         });
                     })), degreeOfParallelism: System.Environment.ProcessorCount);
 
