@@ -253,7 +253,7 @@ class Build : NukeBuild
                 {
                     DotNetNuGetPush(s => s
                         // Need to set it here, otherwise it takes the one from NUKEs .tmp directory
-                        .SetToolPath(ToolPathResolver.GetPathExecutable("dotnet"))
+                        .SetProcessToolPath(ToolPathResolver.GetPathExecutable("dotnet"))
                         .SetTargetPath(x)
                         .SetSource(PublicMyGetSource)
                         .SetApiKey(PublicMyGetApiKey));
@@ -263,7 +263,7 @@ class Build : NukeBuild
                         // Stable releases are published to NuGet
                         DotNetNuGetPush(s => s
                             // Need to set it here, otherwise it takes the one from NUKEs .tmp directory
-                            .SetToolPath(ToolPathResolver.GetPathExecutable("dotnet"))
+                            .SetProcessToolPath(ToolPathResolver.GetPathExecutable("dotnet"))
                             .SetTargetPath(x)
                             .SetSource("https://api.nuget.org/v3/index.json")
                             .SetApiKey(NuGetApiKey));
@@ -276,7 +276,7 @@ class Build : NukeBuild
         .Executes(() =>
         {
             DocFXMetadata(x => x
-                .SetEnvironmentVariable("DOCFX_SOURCE_BRANCH_NAME", GitVersion.BranchName)
+                .SetProcessEnvironmentVariable("DOCFX_SOURCE_BRANCH_NAME", GitVersion.BranchName)
                 .SetProjects(DocFxFile));
         });
 
@@ -294,7 +294,7 @@ class Build : NukeBuild
             File.Copy(SolutionDirectory / "README.md", SolutionDirectory / "index.md");
 
             DocFXBuild(x => x
-                .SetEnvironmentVariable("DOCFX_SOURCE_BRANCH_NAME", GitVersion.BranchName)
+                .SetProcessEnvironmentVariable("DOCFX_SOURCE_BRANCH_NAME", GitVersion.BranchName)
                 .SetConfigFile(DocFxFile));
 
             File.Delete(SolutionDirectory / "index.md");
