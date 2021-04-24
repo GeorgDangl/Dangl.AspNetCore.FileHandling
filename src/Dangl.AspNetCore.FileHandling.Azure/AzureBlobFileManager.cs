@@ -286,7 +286,7 @@ namespace Dangl.AspNetCore.FileHandling.Azure
             }
 
             var validUntil = DateTimeOffset.UtcNow.AddMinutes(validForMinutes);
-            BlobSasBuilder sasBuilder = new BlobSasBuilder()
+            var sasBuilder = new BlobSasBuilder()
             {
                 BlobContainerName = container,
                 BlobName = filePath,
@@ -298,21 +298,20 @@ namespace Dangl.AspNetCore.FileHandling.Azure
 
             var key = new StorageSharedKeyCredential(_blobClient.AccountName, _accessKey);
 
-            // Use the key to get the SAS token.
-            string sasToken = sasBuilder.ToSasQueryParameters(key).ToString();
-
             // Construct the full URI, including the SAS token.
-            UriBuilder fullUri = new UriBuilder()
+            var blobReference = GetBlobReference(container, filePath);
+            var blobUri = new BlobUriBuilder(blobReference.Uri)
             {
-                Scheme = "https",
-                Host = $"{_blobClient.AccountName}.blob.core.windows.net",
-                Path = $"{container}/{filePath}",
-                Query = sasToken
-            };
+                // Use the key to get the SAS token.
+                Sas = sasBuilder.ToSasQueryParameters(key),
+                BlobContainerName = container,
+                BlobName = filePath
+            }
+            .ToUri();
 
             var uploadLink = new SasUploadLink
             {
-                UploadLink = fullUri.ToString(),
+                UploadLink = blobUri.ToString(),
                 ValidUntil = validUntil
             };
 

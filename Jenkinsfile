@@ -12,8 +12,13 @@ pipeline {
     }
     stages {
         stage ('Test') {
+			agent {
+			    node {
+			        label 'linux'
+			    }
+			}
             steps {
-                powershell './build.ps1 Coverage -configuration Debug'
+                powershell './build.cmd Coverage -configuration Debug'
             }
             post {
                 always {

@@ -34,6 +34,8 @@ using static Nuke.Common.Tools.ReportGenerator.ReportGeneratorTasks;
 using static Nuke.GitHub.ChangeLogExtensions;
 using static Nuke.GitHub.GitHubTasks;
 using static Nuke.WebDocu.WebDocuTasks;
+using static Nuke.Common.Tools.Docker.DockerTasks;
+using Nuke.Common.Tools.Docker;
 
 class Build : NukeBuild
 {
@@ -121,6 +123,9 @@ class Build : NukeBuild
             var dotnetPath = ToolPathResolver.GetPathExecutable("dotnet");
             var snapshotIndex = 0;
 
+            // That's required since the Azure integration tests depend on that image
+            DockerPull(c => c.SetName("mcr.microsoft.com/azure-storage/azurite"));
+
             DotCoverCover(c => c
                     .SetTargetExecutable(dotnetPath)
                     .SetFilters("+:Dangl.AspNetCore.FileHandling")
@@ -181,7 +186,7 @@ class Build : NukeBuild
     private void PrependFrameworkToTestresults()
     {
         var testResults = GlobFiles(OutputDirectory, "*testresults*.xml").ToList();
-        Logger.Log(LogLevel.Normal, $"Found {testResults.Count} test result files on which to append the framework.");
+        Logger.Normal($"Found {testResults.Count} test result files on which to append the framework.");
         foreach (var testResultFile in testResults)
         {
             var frameworkName = GetFrameworkNameFromFilename(testResultFile);
@@ -205,7 +210,7 @@ class Build : NukeBuild
         // since in Jenkins, the format is internally converted to JUnit. Aterwards, results with the same timestamps are
         // ignored. See here for how the code is translated to JUnit format by the Jenkins plugin:
         // https://github.com/jenkinsci/xunit-plugin/blob/d970c50a0501f59b303cffbfb9230ba977ce2d5a/src/main/resources/org/jenkinsci/plugins/xunit/types/xunitdotnet-2.0-to-junit.xsl#L75-L79
-        Logger.Log(LogLevel.Normal, "Updating \"run-time\" attributes in assembly entries to prevent Jenkins to treat them as duplicates");
+        Logger.Normal("Updating \"run-time\" attributes in assembly entries to prevent Jenkins to treat them as duplicates");
         var firstXdoc = XDocument.Load(testResults[0]);
         var runtime = DateTime.Now;
         var firstAssemblyNodes = firstXdoc.Root.Elements().Where(e => e.Name.LocalName == "assembly");
