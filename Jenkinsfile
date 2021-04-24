@@ -18,7 +18,7 @@ pipeline {
 			    }
 			}
             steps {
-                powershell './build.cmd Coverage -configuration Debug'
+                sh './build.cmd Coverage -configuration Debug'
             }
             post {
                 always {
