@@ -18,7 +18,7 @@ pipeline {
 			    }
 			}
             steps {
-                sh 'bash build.sh Coverage -configuration Debug'
+                sh 'bash build.sh Tests -configuration Debug'
             }
             post {
                 always {
@@ -42,21 +42,6 @@ pipeline {
                         tools: [
                             xUnitDotNet(deleteOutputFiles: true, failIfNotNew: true, pattern: '**/*testresults.xml', stopProcessingIfError: true)
                         ])
-                    cobertura(
-                        coberturaReportFile: 'output/cobertura_coverage.xml',
-                        failUnhealthy: false,
-                        failUnstable: false,
-                        maxNumberOfBuilds: 0,
-                        onlyStable: false,
-                        zoomCoverageChart: false)
-                    publishHTML([
-                        allowMissing: false,
-                        alwaysLinkToLastBuild: false,
-                        keepAll: false,
-                        reportDir: 'output/CoverageReport',
-                        reportFiles: 'index.htm',
-                        reportName: 'Coverage Report',
-                        reportTitles: ''])
                 }
             }
         }

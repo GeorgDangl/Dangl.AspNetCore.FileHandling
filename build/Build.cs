@@ -44,7 +44,7 @@ class Build : NukeBuild
     [Parameter] readonly string KeyVaultBaseUrl;
     [Parameter] readonly string KeyVaultClientId;
     [Parameter] readonly string KeyVaultClientSecret;
-    [GitVersion(Framework = "netcoreapp3.1")] readonly GitVersion GitVersion;
+    [GitVersion(Framework = "net5.0")] readonly GitVersion GitVersion;
     [GitRepository] readonly GitRepository GitRepository;
     [KeyVault] readonly KeyVault KeyVault;
 
@@ -115,7 +115,7 @@ class Build : NukeBuild
                     .SetVersion(GitVersion.NuGetVersion));
             });
 
-    Target Coverage => _ => _
+    Target Tests => _ => _
         .DependsOn(Compile)
         .Executes(async () =>
         {
@@ -145,32 +145,6 @@ class Build : NukeBuild
                     })), degreeOfParallelism: System.Environment.ProcessorCount);
 
             PrependFrameworkToTestresults();
-
-            var snapshots = GlobFiles(OutputDirectory, "*.snapshot")
-               .Aggregate((c, n) => c + ";" + n);
-
-            DotCoverMerge(c => c
-                .SetSource(snapshots)
-                .SetOutputFile(OutputDirectory / "coverage.snapshot"));
-
-            DotCoverReport(c => c
-                .SetSource(OutputDirectory / "coverage.snapshot")
-                .SetOutputFile(OutputDirectory / "coverage.xml")
-                .SetReportType(DotCoverReportType.DetailedXml));
-
-            // This is the report that's pretty and visualized in Jenkins
-            ReportGenerator(c => c
-                .SetFramework("netcoreapp3.0")
-                .SetReports(OutputDirectory / "coverage.xml")
-                .SetTargetDirectory(OutputDirectory / "CoverageReport"));
-
-            // This is the report in Cobertura format that integrates so nice in Jenkins
-            // dashboard and allows to extract more metrics and set build health based
-            // on coverage readings
-            await DotCoverToCobertura(s => s
-                    .SetInputFile(OutputDirectory / "coverage.xml")
-                    .SetOutputFile(OutputDirectory / "cobertura_coverage.xml"))
-                .ConfigureAwait(false);
         });
 
     private IEnumerable<string> GetTestFrameworksForProjectFile(string projectFile)
