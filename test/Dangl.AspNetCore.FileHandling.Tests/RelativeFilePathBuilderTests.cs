@@ -14,7 +14,7 @@ namespace Dangl.AspNetCore.FileHandling.Tests
         {
             var filePath = RelativeFilePathBuilder.GetRelativeFilePath(_fileId, _containerName, _fileName);
             var expected = @"test-files\c3\b8\c3b836ef-ec43-4ac2-bba1-f477db3f480d_file.bin";
-            Assert.Equal(expected, filePath);
+            Assert.Equal(expected, filePath.Replace('/', '\\'));
         }
 
         [Theory]
@@ -66,7 +66,7 @@ namespace Dangl.AspNetCore.FileHandling.Tests
         {
             var filePath = RelativeFilePathBuilder.GetRelativeFilePath(_fileId, _containerName, null);
             var expected = @"test-files\c3\b8\c3b836ef-ec43-4ac2-bba1-f477db3f480d";
-            Assert.Equal(expected, filePath);
+            Assert.Equal(expected, filePath.Replace('/', '\\'));
         }
 
         [Fact]
@@ -74,7 +74,7 @@ namespace Dangl.AspNetCore.FileHandling.Tests
         {
             var filePath = RelativeFilePathBuilder.GetRelativeFilePath(_fileId, _containerName, string.Empty);
             var expected = @"test-files\c3\b8\c3b836ef-ec43-4ac2-bba1-f477db3f480d";
-            Assert.Equal(expected, filePath);
+            Assert.Equal(expected, filePath.Replace('/', '\\'));
         }
 
         [Fact]
@@ -88,7 +88,7 @@ namespace Dangl.AspNetCore.FileHandling.Tests
             var guidPart = "c3b836ef-ec43-4ac2-bba1-f477db3f480d";
             var fileNamePart = "_" + new string('a', 1024 - guidPart.Length - 1); // -1 for the dash
             var expected = expectedBase + guidPart + fileNamePart;
-            Assert.Equal(expected, filePath);
+            Assert.Equal(expected, filePath.Replace('/', '\\'));
             Assert.True(filePath.Length <= 1024 + expectedBase.Length);
         }
     }
