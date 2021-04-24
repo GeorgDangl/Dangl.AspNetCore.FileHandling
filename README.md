@@ -2,7 +2,6 @@
 
 [![Build Status](https://jenkins.dangl.me/buildStatus/icon?job=GeorgDangl%2FDangl.AspNetCore.FileHandling%2Fdevelop)](https://jenkins.dangl.me/job/GeorgDangl/job/Dangl.AspNetCore.FileHandling/job/develop/)  
 [![NuGet](https://img.shields.io/nuget/v/Dangl.AspNetCore.FileHandling.svg)](https://www.nuget.org/packages/Dangl.AspNetCore.FileHandling)  
-[![Built with Nuke](http://nuke.build/rounded)](https://www.nuke.build)
 
 [Link to documentation](https://docs.dangl-it.com/Projects/Dangl.AspNetCore.FileHandling)
 
