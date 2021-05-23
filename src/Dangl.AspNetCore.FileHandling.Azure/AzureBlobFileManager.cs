@@ -157,8 +157,7 @@ namespace Dangl.AspNetCore.FileHandling.Azure
 
         private BlobClient GetBlobReference(Guid fileId, string container, string fileName)
         {
-            var filePath = $"{fileId.ToString().ToLowerInvariant()}_{fileName}"
-                    .WithMaxLength(FileHandlerDefaults.FILE_PATH_MAX_LENGTH);
+            var filePath = AzureBlobFilePathBuilder.GetTimeStampedBlobReference(fileId, fileName);
             var containerReference = _blobClient.GetBlobContainerClient(container);
             return containerReference.GetBlobClient(filePath);
         }
@@ -256,8 +255,7 @@ namespace Dangl.AspNetCore.FileHandling.Azure
         /// <returns></returns>
         public Task<RepositoryResult<SasUploadLink>> GetSasUploadLinkAsync(Guid fileId, string container, string fileName, int validForMinutes = 5)
         {
-            var filePath = $"{fileId.ToString().ToLowerInvariant()}_{fileName}"
-                    .WithMaxLength(FileHandlerDefaults.FILE_PATH_MAX_LENGTH);
+            var filePath = AzureBlobFilePathBuilder.GetTimeStampedBlobReference(fileId, fileName);
             return GetSasUploadLinkInternalAsync(filePath, container, validForMinutes);
         }
 

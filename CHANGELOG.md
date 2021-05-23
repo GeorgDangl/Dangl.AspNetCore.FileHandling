@@ -2,6 +2,9 @@
 
 All notable changes to **Dangl.AspNetCore.FileHandling** are documented here.
 
+## v0.6.1:
+- Added `AzureBlobFilePathBuilder` to provide a method to build file paths for Azure Blob Storage
+
 ## v0.6.0:
 - Added `CheckIfFileExistsAsync` to the `IFileManager` interface
 - The Azure Blob SAS link generation does now also work with non-Azure hosted endpoints and is now covered by an integration test
