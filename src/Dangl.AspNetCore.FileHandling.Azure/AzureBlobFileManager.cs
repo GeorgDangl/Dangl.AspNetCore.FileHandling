@@ -273,14 +273,72 @@ namespace Dangl.AspNetCore.FileHandling.Azure
             return GetSasUploadLinkInternalAsync(filePath, container, validForMinutes);
         }
 
-        private Task<RepositoryResult<SasUploadLink>> GetSasUploadLinkInternalAsync(string filePath, string container, int validForMinutes)
+        private async Task<RepositoryResult<SasUploadLink>> GetSasUploadLinkInternalAsync(string filePath, string container, int validForMinutes)
+        {
+            var sasUploadLink = await GeSasLinkInternalAsync(filePath, container, validForMinutes, BlobSasPermissions.Create | BlobSasPermissions.Write);
+            if (!sasUploadLink.IsSuccess)
+            {
+                return RepositoryResult<SasUploadLink>.Fail(sasUploadLink.ErrorMessage);
+            }
+
+            return RepositoryResult<SasUploadLink>.Success(new SasUploadLink
+            {
+                UploadLink = sasUploadLink.Value.link,
+                ValidUntil = sasUploadLink.Value.validUntil
+            });
+        }
+
+        /// <summary>
+        /// Creates a SAS download link to allow direct blob download
+        /// </summary>
+        /// <param name="fileId"></param>
+        /// <param name="container"></param>
+        /// <param name="fileName"></param>
+        /// <param name="validForMinutes"></param>
+        /// <returns></returns>
+        public Task<RepositoryResult<SasDownloadLink>> GetSasDownloadLinkAsync(Guid fileId, string container, string fileName, int validForMinutes = 5)
+        {
+            var filePath = AzureBlobFilePathBuilder.GetTimeStampedBlobReference(fileId, fileName);
+            return GetSasDownloadLinkInternalAsync(filePath, container, validForMinutes);
+        }
+
+        /// <summary>
+        /// Creates a SAS download link to allow direct blob download
+        /// </summary>
+        /// <param name="fileDate"></param>
+        /// <param name="container"></param>
+        /// <param name="fileName"></param>
+        /// <param name="validForMinutes"></param>
+        /// <returns></returns>
+        public Task<RepositoryResult<SasDownloadLink>> GetSasDownloadLinkAsync(DateTime fileDate, string container, string fileName, int validForMinutes = 5)
+        {
+            var filePath = TimeStampedFilePathBuilder.GetTimeStampedFilePath(fileDate, fileName);
+            return GetSasDownloadLinkInternalAsync(filePath, container, validForMinutes);
+        }
+
+        private async Task<RepositoryResult<SasDownloadLink>> GetSasDownloadLinkInternalAsync(string filePath, string container, int validForMinutes)
+        {
+            var sasUploadLink = await GeSasLinkInternalAsync(filePath, container, validForMinutes, BlobSasPermissions.Read);
+            if (!sasUploadLink.IsSuccess)
+            {
+                return RepositoryResult<SasDownloadLink>.Fail(sasUploadLink.ErrorMessage);
+            }
+
+            return RepositoryResult<SasDownloadLink>.Success(new SasDownloadLink
+            {
+                DownloadLink = sasUploadLink.Value.link,
+                ValidUntil = sasUploadLink.Value.validUntil
+            });
+        }
+
+        private Task<RepositoryResult<(string link, DateTimeOffset validUntil)>> GeSasLinkInternalAsync(string filePath, string container, int validForMinutes, BlobSasPermissions permissions)
         {
             // Taken from the docs at
             // https://docs.microsoft.com/en-us/azure/storage/blobs/storage-blob-user-delegation-sas-create-dotnet
 
             if (validForMinutes <= 0)
             {
-                return Task.FromResult(RepositoryResult<SasUploadLink>.Fail("The validity in minutes must be greater than zero"));
+                return Task.FromResult(RepositoryResult<(string, DateTimeOffset)>.Fail("The validity in minutes must be greater than zero"));
             }
 
             var validUntil = DateTimeOffset.UtcNow.AddMinutes(validForMinutes);
@@ -292,7 +350,7 @@ namespace Dangl.AspNetCore.FileHandling.Azure
                 StartsOn = DateTimeOffset.UtcNow,
                 ExpiresOn = validUntil
             };
-            sasBuilder.SetPermissions(BlobSasPermissions.Create | BlobSasPermissions.Write);
+            sasBuilder.SetPermissions(permissions);
 
             var key = new StorageSharedKeyCredential(_blobClient.AccountName, _accessKey);
 
@@ -307,13 +365,7 @@ namespace Dangl.AspNetCore.FileHandling.Azure
             }
             .ToUri();
 
-            var uploadLink = new SasUploadLink
-            {
-                UploadLink = blobUri.ToString(),
-                ValidUntil = validUntil
-            };
-
-            return Task.FromResult(RepositoryResult<SasUploadLink>.Success(uploadLink));
+            return Task.FromResult(RepositoryResult<(string, DateTimeOffset)>.Success((blobUri.ToString(), validUntil)));
         }
 
         /// <summary>
