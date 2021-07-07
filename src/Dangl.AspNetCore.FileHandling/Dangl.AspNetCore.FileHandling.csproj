@@ -12,7 +12,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Dangl.Data.Shared" Version="1.9.0" />
+    <PackageReference Include="Dangl.Data.Shared" Version="2.1.1" />
     <PackageReference Include="Dangl.Common" Version="1.6.1" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="3.1.5" />
   </ItemGroup>

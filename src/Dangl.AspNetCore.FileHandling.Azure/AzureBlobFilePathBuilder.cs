@@ -15,7 +15,7 @@ namespace Dangl.AspNetCore.FileHandling.Azure
         /// <param name="fileId"></param>
         /// <param name="fileName"></param>
         /// <returns></returns>
-        public static string GetTimeStampedBlobReference(Guid fileId, string fileName)
+        public static string GetBlobReferenceWithFileId(Guid fileId, string fileName)
         {
             var filePath = $"{fileId.ToString().ToLowerInvariant()}_{fileName}"
                     .WithMaxLength(FileHandlerDefaults.FILE_PATH_MAX_LENGTH);
