@@ -2,6 +2,9 @@
 
 All notable changes to **Dangl.AspNetCore.FileHandling** are documented here.
 
+## v0.6.2:
+- Fixed a bug in the `InstanceInMemoryFileManager` and `InMemoryFileManager` classes, where getting a file stream, then disposing it, led to subsequent accesses to the file to fail
+
 ## v0.6.1:
 - Added `AzureBlobFilePathBuilder` to provide a method to build file paths for Azure Blob Storage
 - Added `GetSasDownloadLinkAsync` to `AzureBlobFileManager` to allow creation of direct SAS download links

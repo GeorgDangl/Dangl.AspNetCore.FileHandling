@@ -1,9 +1,9 @@
-﻿using System;
+﻿using Dangl.Data.Shared;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using Dangl.Data.Shared;
 
 namespace Dangl.AspNetCore.FileHandling
 {
@@ -18,8 +18,8 @@ namespace Dangl.AspNetCore.FileHandling
         /// Gives access to all cached files
         /// </summary>
         public IReadOnlyList<InMemorySavedFile> SavedFiles => _savedFiles.AsReadOnly();
-        private List<InMemorySavedFile> _savedFiles = new List<InMemorySavedFile>();
 
+        private List<InMemorySavedFile> _savedFiles = new List<InMemorySavedFile>();
 
         /// <summary>
         /// Removes all cached files
@@ -44,7 +44,10 @@ namespace Dangl.AspNetCore.FileHandling
 
             if (file != null)
             {
-                return Task.FromResult(RepositoryResult<Stream>.Success(file.FileStream));
+                // We're copying and returning a new stream, since the caller
+                // might dispose the returned value, but we need to ensure that
+                // we can always again return a given file
+                return Task.FromResult(RepositoryResult<Stream>.Success(file.FileStream.Copy()));
             }
 
             return Task.FromResult(RepositoryResult<Stream>.Fail("File not found"));
@@ -66,7 +69,10 @@ namespace Dangl.AspNetCore.FileHandling
 
             if (file != null)
             {
-                return Task.FromResult(RepositoryResult<Stream>.Success(file.FileStream));
+                // We're copying and returning a new stream, since the caller
+                // might dispose the returned value, but we need to ensure that
+                // we can always again return a given file
+                return Task.FromResult(RepositoryResult<Stream>.Success(file.FileStream.Copy()));
             }
 
             return Task.FromResult(RepositoryResult<Stream>.Fail("File not found"));

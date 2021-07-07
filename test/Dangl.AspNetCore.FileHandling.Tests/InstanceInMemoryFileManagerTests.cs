@@ -21,6 +21,52 @@ namespace Dangl.AspNetCore.FileHandling.Tests
         }
 
         [Fact]
+        public async Task CanAccessSameFileMultipleTimesEvenAfterFirstRetrivedOneWasDisposed_WithFileId()
+        {
+            var fileId = Guid.NewGuid();
+
+            var inMemoryFileManager = new InstanceInMemoryFileManager();
+            using (var originalMemStream = new MemoryStream(new byte[] { 1, 2, 3, 4, 5 }))
+            {
+                await inMemoryFileManager.SaveFileAsync(fileId, "my-container", "file.bin", originalMemStream);
+            }
+
+            Assert.Single(inMemoryFileManager.SavedFiles);
+
+            using (var accessedStream = (await inMemoryFileManager.GetFileAsync(fileId, "my-container", "file.bin")).Value)
+            {
+                Assert.Equal(5, accessedStream.Length); // If it can be accessed, everything's fine
+            }
+
+            using (var accessedStream = (await inMemoryFileManager.GetFileAsync(fileId, "my-container", "file.bin")).Value)
+            {
+                Assert.Equal(5, accessedStream.Length); // If it can be accessed, everything's fine
+            }
+        }
+
+        [Fact]
+        public async Task CanAccessSameFileMultipleTimesEvenAfterFirstRetrivedOneWasDisposed_WithoutFileId()
+        {
+            var inMemoryFileManager = new InstanceInMemoryFileManager();
+            using (var originalMemStream = new MemoryStream(new byte[] { 1, 2, 3, 4, 5 }))
+            {
+                await inMemoryFileManager.SaveFileAsync("my-container", "file.bin", originalMemStream);
+            }
+
+            Assert.Single(inMemoryFileManager.SavedFiles);
+
+            using (var accessedStream = (await inMemoryFileManager.GetFileAsync("my-container", "file.bin")).Value)
+            {
+                Assert.Equal(5, accessedStream.Length); // If it can be accessed, everything's fine
+            }
+
+            using (var accessedStream = (await inMemoryFileManager.GetFileAsync("my-container", "file.bin")).Value)
+            {
+                Assert.Equal(5, accessedStream.Length); // If it can be accessed, everything's fine
+            }
+        }
+
+        [Fact]
         public async Task CanClearFiles()
         {
             var inMemoryFileManager = new InstanceInMemoryFileManager();
