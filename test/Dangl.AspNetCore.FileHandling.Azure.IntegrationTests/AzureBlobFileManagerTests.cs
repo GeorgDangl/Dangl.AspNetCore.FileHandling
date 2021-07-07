@@ -17,6 +17,11 @@ namespace Dangl.AspNetCore.FileHandling.Azure.IntegrationTests
         [Fact]
         public async Task SasUploadWorkflow()
         {
+            // In case this fails with an error message referencing an invalid header value
+            // for 'x-ms-version', please ensure to manually pull the latest Azurite Docker
+            // image.
+            // The CI handles this automatically
+
             var connectionString = _dockerTestUtilities.GetBlobConnectionString();
             var blobFileManager = new AzureBlobFileManager(connectionString);
 
