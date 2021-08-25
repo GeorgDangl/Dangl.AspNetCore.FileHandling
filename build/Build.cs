@@ -139,7 +139,7 @@ class Build : NukeBuild
                             return cc
                                 .SetProcessWorkingDirectory(projectDirectory)
                                 .SetFramework(targetFramework)
-                                .SetLogger($"xunit;LogFilePath={OutputDirectory}/{snapshotIndex}_testresults-{targetFramework}.xml");
+                                .SetLoggers($"xunit;LogFilePath={OutputDirectory}/{snapshotIndex}_testresults-{targetFramework}.xml");
                         });
                     })), degreeOfParallelism: System.Environment.ProcessorCount);
 
