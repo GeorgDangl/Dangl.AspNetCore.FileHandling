@@ -2,6 +2,9 @@
 
 All notable changes to **Dangl.AspNetCore.FileHandling** are documented here.
 
+## 0.7.0:
+- Added new `friendlyFileName` parameter when creating SAS links, so it's possible to manually configure the file name for downloading
+
 ## v0.6.2:
 - Fixed a bug in the `InstanceInMemoryFileManager` and `InMemoryFileManager` classes, where getting a file stream, then disposing it, led to subsequent accesses to the file to fail
 
