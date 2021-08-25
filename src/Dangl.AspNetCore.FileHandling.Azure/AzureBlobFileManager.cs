@@ -1,11 +1,13 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Net.Mime;
 using System.Threading.Tasks;
 using Azure;
 using Azure.Storage;
 using Azure.Storage.Blobs;
 using Azure.Storage.Sas;
+using Azure.Storage.Blobs.Models;
 using Dangl.Data.Shared;
 
 namespace Dangl.AspNetCore.FileHandling.Azure
@@ -275,7 +277,7 @@ namespace Dangl.AspNetCore.FileHandling.Azure
 
         private async Task<RepositoryResult<SasUploadLink>> GetSasUploadLinkInternalAsync(string filePath, string container, int validForMinutes)
         {
-            var sasUploadLink = await GeSasLinkInternalAsync(filePath, container, validForMinutes, BlobSasPermissions.Create | BlobSasPermissions.Write);
+            var sasUploadLink = await GeSasLinkInternalAsync(filePath, container, validForMinutes, BlobSasPermissions.Create | BlobSasPermissions.Write, null);
             if (!sasUploadLink.IsSuccess)
             {
                 return RepositoryResult<SasUploadLink>.Fail(sasUploadLink.ErrorMessage);
@@ -295,11 +297,12 @@ namespace Dangl.AspNetCore.FileHandling.Azure
         /// <param name="container"></param>
         /// <param name="fileName"></param>
         /// <param name="validForMinutes"></param>
+        /// <param name="friendlyFileName">A filename to optionally use for the SAS download</param>
         /// <returns></returns>
-        public Task<RepositoryResult<SasDownloadLink>> GetSasDownloadLinkAsync(Guid fileId, string container, string fileName, int validForMinutes = 5)
+        public Task<RepositoryResult<SasDownloadLink>> GetSasDownloadLinkAsync(Guid fileId, string container, string fileName, int validForMinutes = 5, string friendlyFileName = null)
         {
             var filePath = AzureBlobFilePathBuilder.GetBlobReferenceWithFileId(fileId, fileName);
-            return GetSasDownloadLinkInternalAsync(filePath, container, validForMinutes);
+            return GetSasDownloadLinkInternalAsync(filePath, container, validForMinutes, friendlyFileName);
         }
 
         /// <summary>
@@ -309,16 +312,17 @@ namespace Dangl.AspNetCore.FileHandling.Azure
         /// <param name="container"></param>
         /// <param name="fileName"></param>
         /// <param name="validForMinutes"></param>
+        /// <param name="friendlyFileName">A filename to optionally use for the SAS download</param>
         /// <returns></returns>
-        public Task<RepositoryResult<SasDownloadLink>> GetSasDownloadLinkAsync(DateTime fileDate, string container, string fileName, int validForMinutes = 5)
+        public Task<RepositoryResult<SasDownloadLink>> GetSasDownloadLinkAsync(DateTime fileDate, string container, string fileName, int validForMinutes = 5, string friendlyFileName = null)
         {
             var filePath = TimeStampedFilePathBuilder.GetTimeStampedFilePath(fileDate, fileName);
-            return GetSasDownloadLinkInternalAsync(filePath, container, validForMinutes);
+            return GetSasDownloadLinkInternalAsync(filePath, container, validForMinutes, friendlyFileName);
         }
 
-        private async Task<RepositoryResult<SasDownloadLink>> GetSasDownloadLinkInternalAsync(string filePath, string container, int validForMinutes)
+        private async Task<RepositoryResult<SasDownloadLink>> GetSasDownloadLinkInternalAsync(string filePath, string container, int validForMinutes, string friendlyFileName)
         {
-            var sasUploadLink = await GeSasLinkInternalAsync(filePath, container, validForMinutes, BlobSasPermissions.Read);
+            var sasUploadLink = await GeSasLinkInternalAsync(filePath, container, validForMinutes, BlobSasPermissions.Read, friendlyFileName);
             if (!sasUploadLink.IsSuccess)
             {
                 return RepositoryResult<SasDownloadLink>.Fail(sasUploadLink.ErrorMessage);
@@ -331,7 +335,7 @@ namespace Dangl.AspNetCore.FileHandling.Azure
             });
         }
 
-        private Task<RepositoryResult<(string link, DateTimeOffset validUntil)>> GeSasLinkInternalAsync(string filePath, string container, int validForMinutes, BlobSasPermissions permissions)
+        private Task<RepositoryResult<(string link, DateTimeOffset validUntil)>> GeSasLinkInternalAsync(string filePath, string container, int validForMinutes, BlobSasPermissions permissions, string friendlyFileName)
         {
             // Taken from the docs at
             // https://docs.microsoft.com/en-us/azure/storage/blobs/storage-blob-user-delegation-sas-create-dotnet
@@ -348,8 +352,31 @@ namespace Dangl.AspNetCore.FileHandling.Azure
                 BlobName = filePath,
                 Resource = "b",
                 StartsOn = DateTimeOffset.UtcNow,
-                ExpiresOn = validUntil
+                ExpiresOn = validUntil,
             };
+
+            if (!string.IsNullOrWhiteSpace(friendlyFileName))
+            {
+                sasBuilder.ContentDisposition = new ContentDisposition
+                {
+                    DispositionType = "attachment",
+                    FileName = friendlyFileName
+                }.ToString();
+            }
+            else
+            {
+                try
+                {
+                    var fileName = Path.GetFileName(filePath);
+                    sasBuilder.ContentDisposition = new ContentDisposition
+                    {
+                        DispositionType = "attachment",
+                        FileName = fileName
+                    }.ToString();
+                }
+                catch { /* We're ignoring the case where a non-valid file name was given */ }
+            }
+
             sasBuilder.SetPermissions(permissions);
 
             var key = new StorageSharedKeyCredential(_blobClient.AccountName, _accessKey);
@@ -361,7 +388,7 @@ namespace Dangl.AspNetCore.FileHandling.Azure
                 // Use the key to get the SAS token.
                 Sas = sasBuilder.ToSasQueryParameters(key),
                 BlobContainerName = container,
-                BlobName = filePath
+                BlobName = filePath,
             }
             .ToUri();
 
