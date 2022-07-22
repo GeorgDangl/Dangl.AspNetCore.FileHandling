@@ -2,6 +2,9 @@
 
 All notable changes to **Dangl.AspNetCore.FileHandling** are documented here.
 
+## v0.7.1:
+- Update Azure Storage dependencies
+
 ## 0.7.0:
 - Added new `friendlyFileName` parameter when creating SAS links, so it's possible to manually configure the file name for downloading
 
