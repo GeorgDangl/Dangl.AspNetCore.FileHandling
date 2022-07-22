@@ -1,5 +1,4 @@
-﻿using Nuke.CoberturaConverter;
-using Nuke.Common;
+﻿using Nuke.Common;
 using Nuke.Common.Git;
 using Nuke.Common.IO;
 using Nuke.Common.ProjectModel;
@@ -22,15 +21,12 @@ using System.IO;
 using System.Linq;
 using System.Xml.Linq;
 using System.Xml.XPath;
-using static Nuke.CoberturaConverter.CoberturaConverterTasks;
 using static Nuke.Common.ChangeLog.ChangelogTasks;
 using static Nuke.Common.IO.FileSystemTasks;
 using static Nuke.Common.IO.PathConstruction;
 using static Nuke.Common.IO.XmlTasks;
 using static Nuke.Common.Tools.DocFX.DocFXTasks;
-using static Nuke.Common.Tools.DotCover.DotCoverTasks;
 using static Nuke.Common.Tools.DotNet.DotNetTasks;
-using static Nuke.Common.Tools.ReportGenerator.ReportGeneratorTasks;
 using static Nuke.GitHub.ChangeLogExtensions;
 using static Nuke.GitHub.GitHubTasks;
 using static Nuke.WebDocu.WebDocuTasks;
@@ -159,7 +155,7 @@ class Build : NukeBuild
     private void PrependFrameworkToTestresults()
     {
         var testResults = GlobFiles(OutputDirectory, "*testresults*.xml").ToList();
-        Logger.Normal($"Found {testResults.Count} test result files on which to append the framework.");
+        Serilog.Log.Information($"Found {testResults.Count} test result files on which to append the framework.");
         foreach (var testResultFile in testResults)
         {
             var frameworkName = GetFrameworkNameFromFilename(testResultFile);
@@ -183,7 +179,7 @@ class Build : NukeBuild
         // since in Jenkins, the format is internally converted to JUnit. Aterwards, results with the same timestamps are
         // ignored. See here for how the code is translated to JUnit format by the Jenkins plugin:
         // https://github.com/jenkinsci/xunit-plugin/blob/d970c50a0501f59b303cffbfb9230ba977ce2d5a/src/main/resources/org/jenkinsci/plugins/xunit/types/xunitdotnet-2.0-to-junit.xsl#L75-L79
-        Logger.Normal("Updating \"run-time\" attributes in assembly entries to prevent Jenkins to treat them as duplicates");
+        Serilog.Log.Information("Updating \"run-time\" attributes in assembly entries to prevent Jenkins to treat them as duplicates");
         var firstXdoc = XDocument.Load(testResults[0]);
         var runtime = DateTime.Now;
         var firstAssemblyNodes = firstXdoc.Root.Elements().Where(e => e.Name.LocalName == "assembly");
@@ -223,10 +219,15 @@ class Build : NukeBuild
         .Requires(() => PublicMyGetApiKey)
         .Requires(() => NuGetApiKey)
         .Requires(() => Configuration.EqualsOrdinalIgnoreCase("Release"))
+        .OnlyWhenDynamic(() => IsOnBranch("master") || IsOnBranch("develop"))
         .Executes(() =>
         {
-            GlobFiles(OutputDirectory, "*.nupkg").NotEmpty()
+            var packages = GlobFiles(OutputDirectory, "*.nupkg")
                 .Where(x => !x.EndsWith("symbols.nupkg"))
+                .ToList();
+            Assert.NotEmpty(packages);
+
+            packages
                 .ForEach(x =>
                 {
                     DotNetNuGetPush(s => s
@@ -285,6 +286,7 @@ class Build : NukeBuild
         .DependsOn(BuildDocumentation)
         .Requires(() => DocuApiKey)
         .Requires(() => DocuBaseUrl)
+        .OnlyWhenDynamic(() => IsOnBranch("master") || IsOnBranch("develop"))
         .Executes(() =>
         {
             var changeLog = GetCompleteChangeLog(ChangeLogFile);
@@ -301,7 +303,7 @@ class Build : NukeBuild
     Target PublishGitHubRelease => _ => _
         .DependsOn(Pack)
         .Requires(() => GitHubAuthenticationToken)
-        .OnlyWhenDynamic(() => GitVersion.BranchName.Equals("master") || GitVersion.BranchName.Equals("origin/master"))
+        .OnlyWhenDynamic(() => IsOnBranch("master"))
         .Executes(() =>
         {
             var releaseTag = $"v{GitVersion.MajorMinorPatch}";
@@ -312,7 +314,8 @@ class Build : NukeBuild
             var completeChangeLog = $"## {releaseTag}" + Environment.NewLine + latestChangeLog;
 
             var repositoryInfo = GetGitHubRepositoryInfo(GitRepository);
-            var nuGetPackages = GlobFiles(OutputDirectory, "*.nupkg").NotEmpty().ToArray();
+            var nuGetPackages = GlobFiles(OutputDirectory, "*.nupkg").ToArray();
+            Assert.NotEmpty(nuGetPackages);
 
             PublishRelease(x => x
                 .SetArtifactPaths(nuGetPackages)
@@ -326,4 +329,9 @@ class Build : NukeBuild
                 .GetAwaiter()
                 .GetResult();
         });
+
+    private bool IsOnBranch(string branchName)
+    {
+        return GitVersion.BranchName.Equals(branchName) || GitVersion.BranchName.Equals($"origin/{branchName}");
+    }
 }
