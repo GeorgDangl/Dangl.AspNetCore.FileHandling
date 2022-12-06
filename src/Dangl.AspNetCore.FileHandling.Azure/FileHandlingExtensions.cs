@@ -1,4 +1,6 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using Azure.Storage.Blobs;
+using Microsoft.Extensions.Azure;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Dangl.AspNetCore.FileHandling.Azure
 {
@@ -15,7 +17,16 @@ namespace Dangl.AspNetCore.FileHandling.Azure
         /// <returns></returns>
         public static IServiceCollection AddAzureBlobFileManager(this IServiceCollection services, string storageConnectionString)
         {
-            services.AddTransient<IFileManager>(sc => new AzureBlobFileManager(storageConnectionString));
+            services.AddAzureClients(clientBuilder =>
+            {
+                clientBuilder.AddBlobServiceClient(storageConnectionString);
+            });
+            
+            services.AddTransient<IFileManager>(sc =>
+            {
+                var blobClient = sc.GetRequiredService<BlobServiceClient>();
+                return new AzureBlobFileManager(storageConnectionString, blobClient);
+            });
             return services;
         }
     }

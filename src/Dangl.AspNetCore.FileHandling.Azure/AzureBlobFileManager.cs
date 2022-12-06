@@ -24,9 +24,11 @@ namespace Dangl.AspNetCore.FileHandling.Azure
         /// Instantiates this class with a connection to Azure blob storage
         /// </summary>
         /// <param name="storageConnectionString"></param>
-        public AzureBlobFileManager(string storageConnectionString)
+        /// <param name="blobServiceClient"></param>
+        public AzureBlobFileManager(string storageConnectionString,
+            BlobServiceClient blobServiceClient)
         {
-            _blobClient = new BlobServiceClient(storageConnectionString);
+            _blobClient = blobServiceClient;
 
             _accessKey = storageConnectionString
                 .Split(';')

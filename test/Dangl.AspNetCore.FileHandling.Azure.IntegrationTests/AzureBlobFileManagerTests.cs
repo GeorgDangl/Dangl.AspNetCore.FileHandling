@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Azure.Storage.Blobs;
+using System;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
@@ -26,7 +27,7 @@ namespace Dangl.AspNetCore.FileHandling.Azure.IntegrationTests
             // The CI handles this automatically
 
             var connectionString = _dockerTestUtilities.GetBlobConnectionString();
-            var blobFileManager = new AzureBlobFileManager(connectionString);
+            var blobFileManager = new AzureBlobFileManager(connectionString, new BlobServiceClient(connectionString));
 
             var containerName = "test-files";
             await blobFileManager.EnsureContainerCreated(containerName);
@@ -70,7 +71,7 @@ namespace Dangl.AspNetCore.FileHandling.Azure.IntegrationTests
             // https://github.com/Azure/Azurite/issues/470
 
             var connectionString = _dockerTestUtilities.GetBlobConnectionString();
-            var blobFileManager = new AzureBlobFileManager(connectionString);
+            var blobFileManager = new AzureBlobFileManager(connectionString, new BlobServiceClient(connectionString));
 
             var containerName = "test-files";
             await blobFileManager.EnsureContainerCreated(containerName);
