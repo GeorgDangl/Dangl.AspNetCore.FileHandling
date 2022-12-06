@@ -528,8 +528,15 @@ namespace Dangl.AspNetCore.FileHandling.Azure
 
         private async Task<RepositoryResult<BlobProperties>> GetBlobPropertiesInternalAsync(BlobClient blob)
         {
-            var propertiesResponse = await blob.GetPropertiesAsync();
-            return propertiesResponse.Value;
+            try
+            {
+                var propertiesResponse = await blob.GetPropertiesAsync();
+                return propertiesResponse.Value;
+            }
+            catch (Exception e)
+            {
+                return RepositoryResult<BlobProperties>.Fail(e.ToString());
+            }
         }
     }
 }
