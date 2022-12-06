@@ -21,12 +21,19 @@ namespace Dangl.AspNetCore.FileHandling.Azure
             {
                 clientBuilder.AddBlobServiceClient(storageConnectionString);
             });
-            
-            services.AddTransient<IFileManager>(sc =>
+
+            services.AddTransient<IAzureBlobFileManager>(sc =>
             {
                 var blobClient = sc.GetRequiredService<BlobServiceClient>();
                 return new AzureBlobFileManager(storageConnectionString, blobClient);
             });
+
+            services.AddTransient<IFileManager>(sc =>
+            {
+                var azureBlobHandler = sc.GetRequiredService<IAzureBlobFileManager>();
+                return azureBlobHandler;
+            });
+
             return services;
         }
     }

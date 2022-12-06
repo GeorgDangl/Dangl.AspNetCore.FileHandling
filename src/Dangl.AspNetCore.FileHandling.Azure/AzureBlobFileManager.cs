@@ -1,21 +1,20 @@
+using Azure.Storage;
+using Azure.Storage.Blobs;
+using Azure.Storage.Blobs.Models;
+using Azure.Storage.Sas;
+using Dangl.Data.Shared;
 using System;
 using System.IO;
 using System.Linq;
 using System.Net.Mime;
 using System.Threading.Tasks;
-using Azure;
-using Azure.Storage;
-using Azure.Storage.Blobs;
-using Azure.Storage.Sas;
-using Azure.Storage.Blobs.Models;
-using Dangl.Data.Shared;
 
 namespace Dangl.AspNetCore.FileHandling.Azure
 {
     /// <summary>
     /// Implementation for <see cref="IFileManager"/> which uses Azure blob storage
     /// </summary>
-    public class AzureBlobFileManager : IFileManager
+    public class AzureBlobFileManager : IAzureBlobFileManager
     {
         private readonly BlobServiceClient _blobClient;
         private readonly string _accessKey;
@@ -151,7 +150,14 @@ namespace Dangl.AspNetCore.FileHandling.Azure
             return RepositoryResult.Success();
         }
 
-        private BlobClient GetBlobReference(string container, string fileName)
+        /// <summary>
+        /// Returns the <see cref="BlobClient"/> that matches the path
+        /// constructed from the parameters.
+        /// </summary>
+        /// <param name="container"></param>
+        /// <param name="fileName"></param>
+        /// <returns></returns>
+        public BlobClient GetBlobReference(string container, string fileName)
         {
             var filePath = fileName
                     .WithMaxLength(FileHandlerDefaults.FILE_PATH_MAX_LENGTH);
@@ -159,14 +165,30 @@ namespace Dangl.AspNetCore.FileHandling.Azure
             return containerReference.GetBlobClient(filePath);
         }
 
-        private BlobClient GetBlobReference(Guid fileId, string container, string fileName)
+        /// <summary>
+        /// Returns the <see cref="BlobClient"/> that matches the path
+        /// constructed from the parameters.
+        /// </summary>
+        /// <param name="fileId"></param>
+        /// <param name="container"></param>
+        /// <param name="fileName"></param>
+        /// <returns></returns>
+        public BlobClient GetBlobReference(Guid fileId, string container, string fileName)
         {
             var filePath = AzureBlobFilePathBuilder.GetBlobReferenceWithFileId(fileId, fileName);
             var containerReference = _blobClient.GetBlobContainerClient(container);
             return containerReference.GetBlobClient(filePath);
         }
 
-        private BlobClient GetTimeStampedBlobReference(DateTime fileDate, string container, string fileName)
+        /// <summary>
+        /// Returns the <see cref="BlobClient"/> that matches the path
+        /// constructed from the parameters.
+        /// </summary>
+        /// <param name="fileDate"></param>
+        /// <param name="container"></param>
+        /// <param name="fileName"></param>
+        /// <returns></returns>
+        public BlobClient GetTimeStampedBlobReference(DateTime fileDate, string container, string fileName)
         {
             var filePath = TimeStampedFilePathBuilder.GetTimeStampedFilePath(fileDate, fileName);
             var containerReference = _blobClient.GetBlobContainerClient(container);
@@ -290,6 +312,21 @@ namespace Dangl.AspNetCore.FileHandling.Azure
                 UploadLink = sasUploadLink.Value.link,
                 ValidUntil = sasUploadLink.Value.validUntil
             });
+        }
+
+        /// <summary>
+        /// Creates a SAS download link to allow direct blob download
+        /// </summary>
+        /// <param name="container"></param>
+        /// <param name="fileName"></param>
+        /// <param name="validForMinutes"></param>
+        /// <param name="friendlyFileName">A filename to optionally use for the SAS download</param>
+        /// <returns></returns>
+        public Task<RepositoryResult<SasDownloadLink>> GetSasDownloadLinkAsync(string container, string fileName, int validForMinutes = 5, string friendlyFileName = null)
+        {
+            var filePath = fileName
+                    .WithMaxLength(FileHandlerDefaults.FILE_PATH_MAX_LENGTH);
+            return GetSasDownloadLinkInternalAsync(filePath, container, validForMinutes, friendlyFileName);
         }
 
         /// <summary>
@@ -446,6 +483,53 @@ namespace Dangl.AspNetCore.FileHandling.Azure
             {
                 return RepositoryResult<bool>.Fail(e.ToString());
             }
+        }
+
+        /// <summary>
+        /// Returns the <see cref="BlobProperties"/> for a specific blob instance that matches the path
+        /// constructed from the parameters.
+        /// </summary>
+        /// <param name="container"></param>
+        /// <param name="fileName"></param>
+        /// <returns></returns>
+        public Task<RepositoryResult<BlobProperties>> GetBlobPropertiesAsync(string container, string fileName)
+        {
+            var blob = GetBlobReference(container, fileName);
+            return GetBlobPropertiesInternalAsync(blob);
+        }
+
+        /// <summary>
+        /// Returns the <see cref="BlobProperties"/> for a specific blob instance that matches the path
+        /// constructed from the parameters.
+        /// </summary>
+        /// <param name="fileId"></param>
+        /// <param name="container"></param>
+        /// <param name="fileName"></param>
+        /// <returns></returns>
+        public Task<RepositoryResult<BlobProperties>> GetBlobPropertiesAsync(Guid fileId, string container, string fileName)
+        {
+            var blob = GetBlobReference(fileId, container, fileName);
+            return GetBlobPropertiesInternalAsync(blob);
+        }
+
+        /// <summary>
+        /// Returns the <see cref="BlobProperties"/> for a specific blob instance that matches the path
+        /// constructed from the parameters.
+        /// </summary>
+        /// <param name="fileDate"></param>
+        /// <param name="container"></param>
+        /// <param name="fileName"></param>
+        /// <returns></returns>
+        public Task<RepositoryResult<BlobProperties>> GetBlobPropertiesAsync(DateTime fileDate, string container, string fileName)
+        {
+            var blob = GetTimeStampedBlobReference(fileDate, container, fileName);
+            return GetBlobPropertiesInternalAsync(blob);
+        }
+
+        private async Task<RepositoryResult<BlobProperties>> GetBlobPropertiesInternalAsync(BlobClient blob)
+        {
+            var propertiesResponse = await blob.GetPropertiesAsync();
+            return propertiesResponse.Value;
         }
     }
 }

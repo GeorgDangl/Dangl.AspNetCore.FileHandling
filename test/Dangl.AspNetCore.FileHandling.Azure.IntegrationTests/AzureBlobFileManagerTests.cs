@@ -1,7 +1,7 @@
 ﻿using Azure.Storage.Blobs;
+using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.IO;
-using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 using System.Web;
@@ -16,6 +16,25 @@ namespace Dangl.AspNetCore.FileHandling.Azure.IntegrationTests
         public AzureBlobFileManagerTests(DockerTestUtilities dockerTestUtilities)
         {
             _dockerTestUtilities = dockerTestUtilities;
+        }
+
+        [Fact]
+        public void CanGetInstanceViaDependencyInjection()
+        {
+            // First, we build a service collection that contains
+            // the services for the azure blob file manager
+            var connectionString = _dockerTestUtilities.GetBlobConnectionString();
+            var services = new ServiceCollection()
+                            .AddAzureBlobFileManager(connectionString)
+                            .BuildServiceProvider();
+
+            var fileManager = services.GetRequiredService<IFileManager>();
+            Assert.NotNull(fileManager);
+            Assert.IsType<AzureBlobFileManager>(fileManager);
+
+            var azureBlobFileManager = services.GetRequiredService<IAzureBlobFileManager>();
+            Assert.NotNull(azureBlobFileManager);
+            Assert.IsType<AzureBlobFileManager>(azureBlobFileManager);
         }
 
         [Fact]
@@ -59,6 +78,11 @@ namespace Dangl.AspNetCore.FileHandling.Azure.IntegrationTests
             var fileGetResult = await blobFileManager.GetFileAsync(containerName, fileName);
             Assert.True(fileGetResult.IsSuccess);
             Assert.Equal(6, fileGetResult.Value.Length);
+
+            // As well as get the file's properties
+            var properties = await blobFileManager.GetBlobPropertiesAsync(containerName, fileName);
+            Assert.True(properties.IsSuccess);
+            Assert.Equal(6, properties.Value.ContentLength);
         }
 
         [Theory]
