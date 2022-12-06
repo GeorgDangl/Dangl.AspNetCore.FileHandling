@@ -36,6 +36,8 @@ This implementation will keep its internal cache per instance, thus making it po
 This implementation works against Azure Blob Storage. Additionally, it has a `Task<RepositoryResult> EnsureContainerCreated(string container)` for initialization purposes.
 Azure Blob containers must be created before they can be accessed.
 
+Additionally, `AzureBlobFileManager` also implements `IAzureBlobFileManager` which offers Azure Blob specific methods.
+
 #### SAS Uploads
 
 To directly upload files to Azure Blob Storage, you can use the `AzureBlobFileManager` to generate SAS links:
