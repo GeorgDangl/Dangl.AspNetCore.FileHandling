@@ -49,7 +49,7 @@ namespace Dangl.AspNetCore.FileHandling.Azure.IntegrationTests
             var blobFileManager = new AzureBlobFileManager(connectionString, new BlobServiceClient(connectionString));
 
             var containerName = "test-files";
-            await blobFileManager.EnsureContainerCreated(containerName);
+            await blobFileManager.EnsureContainerCreatedAsync(containerName);
             var fileName = "sas-upload.txt";
 
             // Get the SAS token
@@ -98,7 +98,7 @@ namespace Dangl.AspNetCore.FileHandling.Azure.IntegrationTests
             var blobFileManager = new AzureBlobFileManager(connectionString, new BlobServiceClient(connectionString));
 
             var containerName = "test-files";
-            await blobFileManager.EnsureContainerCreated(containerName);
+            await blobFileManager.EnsureContainerCreatedAsync(containerName);
             var fileName = "sas-download.txt";
 
             var fileId = Guid.NewGuid();

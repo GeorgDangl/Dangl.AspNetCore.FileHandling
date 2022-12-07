@@ -13,6 +13,13 @@ namespace Dangl.AspNetCore.FileHandling.Azure
     public interface IAzureBlobFileManager : IFileManager
     {
         /// <summary>
+        /// Creates the container if it does not yet exist in the storage account
+        /// </summary>
+        /// <param name="container"></param>
+        /// <returns></returns>
+        Task<RepositoryResult> EnsureContainerCreatedAsync(string container);
+
+        /// <summary>
         /// Returns the <see cref="BlobClient"/> that matches the path
         /// constructed from the parameters.
         /// </summary>

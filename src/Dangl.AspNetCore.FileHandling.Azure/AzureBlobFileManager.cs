@@ -143,7 +143,7 @@ namespace Dangl.AspNetCore.FileHandling.Azure
         /// </summary>
         /// <param name="container"></param>
         /// <returns></returns>
-        public async Task<RepositoryResult> EnsureContainerCreated(string container)
+        public async Task<RepositoryResult> EnsureContainerCreatedAsync(string container)
         {
             await _blobClient.GetBlobContainerClient(container)
                 .CreateIfNotExistsAsync();
