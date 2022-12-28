@@ -1,6 +1,7 @@
-﻿using System;
+﻿using Azure.Storage.Blobs;
+using Microsoft.Extensions.DependencyInjection;
+using System;
 using System.IO;
-using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 using System.Web;
@@ -18,6 +19,25 @@ namespace Dangl.AspNetCore.FileHandling.Azure.IntegrationTests
         }
 
         [Fact]
+        public void CanGetInstanceViaDependencyInjection()
+        {
+            // First, we build a service collection that contains
+            // the services for the azure blob file manager
+            var connectionString = _dockerTestUtilities.GetBlobConnectionString();
+            var services = new ServiceCollection()
+                            .AddAzureBlobFileManager(connectionString)
+                            .BuildServiceProvider();
+
+            var fileManager = services.GetRequiredService<IFileManager>();
+            Assert.NotNull(fileManager);
+            Assert.IsType<AzureBlobFileManager>(fileManager);
+
+            var azureBlobFileManager = services.GetRequiredService<IAzureBlobFileManager>();
+            Assert.NotNull(azureBlobFileManager);
+            Assert.IsType<AzureBlobFileManager>(azureBlobFileManager);
+        }
+
+        [Fact]
         public async Task SasUploadWorkflow()
         {
             // In case this fails with an error message referencing an invalid header value
@@ -26,10 +46,10 @@ namespace Dangl.AspNetCore.FileHandling.Azure.IntegrationTests
             // The CI handles this automatically
 
             var connectionString = _dockerTestUtilities.GetBlobConnectionString();
-            var blobFileManager = new AzureBlobFileManager(connectionString);
+            var blobFileManager = new AzureBlobFileManager(connectionString, new BlobServiceClient(connectionString));
 
             var containerName = "test-files";
-            await blobFileManager.EnsureContainerCreated(containerName);
+            await blobFileManager.EnsureContainerCreatedAsync(containerName);
             var fileName = "sas-upload.txt";
 
             // Get the SAS token
@@ -58,6 +78,11 @@ namespace Dangl.AspNetCore.FileHandling.Azure.IntegrationTests
             var fileGetResult = await blobFileManager.GetFileAsync(containerName, fileName);
             Assert.True(fileGetResult.IsSuccess);
             Assert.Equal(6, fileGetResult.Value.Length);
+
+            // As well as get the file's properties
+            var properties = await blobFileManager.GetBlobPropertiesAsync(containerName, fileName);
+            Assert.True(properties.IsSuccess);
+            Assert.Equal(6, properties.Value.ContentLength);
         }
 
         [Theory]
@@ -70,10 +95,10 @@ namespace Dangl.AspNetCore.FileHandling.Azure.IntegrationTests
             // https://github.com/Azure/Azurite/issues/470
 
             var connectionString = _dockerTestUtilities.GetBlobConnectionString();
-            var blobFileManager = new AzureBlobFileManager(connectionString);
+            var blobFileManager = new AzureBlobFileManager(connectionString, new BlobServiceClient(connectionString));
 
             var containerName = "test-files";
-            await blobFileManager.EnsureContainerCreated(containerName);
+            await blobFileManager.EnsureContainerCreatedAsync(containerName);
             var fileName = "sas-download.txt";
 
             var fileId = Guid.NewGuid();
