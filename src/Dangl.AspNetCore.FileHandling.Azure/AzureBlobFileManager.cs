@@ -37,6 +37,24 @@ namespace Dangl.AspNetCore.FileHandling.Azure
         }
 
         /// <summary>
+        /// Instantiates this class with a connection to Azure blob storage. This constructor
+        /// will create it's own, internal <see cref="BlobServiceClient"/>. In dependency injection
+        /// scenarios, it's best to use the overload that allows to inject a <see cref="BlobServiceClient"/>
+        /// directly.
+        /// </summary>
+        /// <param name="storageConnectionString"></param>
+        public AzureBlobFileManager(string storageConnectionString)
+        {
+            _blobClient = new BlobServiceClient(storageConnectionString);
+
+            _accessKey = storageConnectionString
+                .Split(';')
+                .Where(s => s.StartsWith("AccountKey=", StringComparison.InvariantCultureIgnoreCase))
+                .Select(s => s.Substring("AccountKey=".Length))
+                .FirstOrDefault();
+        }
+
+        /// <summary>
         /// Will return the file from the blob storage or
         /// a failed repository result if it does not exist
         /// </summary>
