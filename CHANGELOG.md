@@ -2,6 +2,9 @@
 
 All notable changes to **Dangl.AspNetCore.FileHandling** are documented here.
 
+## v0.8.1:
+- Added an overload to the constructor of `AzureBlobFileManager` back for binary compatibility with earlier versions
+
 ## v0.8.0:
 - Dependency injection for the Azure Blob client was reworked, so it now also adds the original `BlobServiceClient` to the service collection
 - The `AzureBlobFileManager` now implements `IAzureBlobFileManager` and offers additional, Azure Blob specific features. It is also registered as a service for type `IAzureBlobFileManager`
