@@ -87,8 +87,8 @@ namespace Dangl.AspNetCore.FileHandling.Azure
             try
             {
                 var memoryStream = new MemoryStream();
-                var blobResponse = await blobReference.DownloadAsync();
-                await blobResponse.Value.Content.CopyToAsync(memoryStream);
+                var blobResponse = await blobReference.DownloadAsync().ConfigureAwait(false);
+                await blobResponse.Value.Content.CopyToAsync(memoryStream).ConfigureAwait(false);
                 memoryStream.Position = 0;
                 return RepositoryResult<Stream>.Success(memoryStream);
             }
@@ -147,7 +147,7 @@ namespace Dangl.AspNetCore.FileHandling.Azure
         {
             try
             {
-                await blobReference.UploadAsync(fileStream);
+                await blobReference.UploadAsync(fileStream).ConfigureAwait(false);
                 return RepositoryResult.Success();
             }
             catch (Exception e)
@@ -163,8 +163,7 @@ namespace Dangl.AspNetCore.FileHandling.Azure
         /// <returns></returns>
         public async Task<RepositoryResult> EnsureContainerCreatedAsync(string container)
         {
-            await _blobClient.GetBlobContainerClient(container)
-                .CreateIfNotExistsAsync();
+            await _blobClient.GetBlobContainerClient(container).CreateIfNotExistsAsync().ConfigureAwait(false);
             return RepositoryResult.Success();
         }
 
@@ -224,7 +223,7 @@ namespace Dangl.AspNetCore.FileHandling.Azure
             var blobReference = GetBlobReference(container, fileName);
             try
             {
-                await blobReference.DeleteAsync();
+                await blobReference.DeleteAsync().ConfigureAwait(false);
                 return RepositoryResult.Success();
             }
             catch
@@ -245,7 +244,7 @@ namespace Dangl.AspNetCore.FileHandling.Azure
             var blobReference = GetBlobReference(fileId, container, fileName);
             try
             {
-                await blobReference.DeleteAsync();
+                await blobReference.DeleteAsync().ConfigureAwait(false);
                 return RepositoryResult.Success();
             }
             catch
@@ -266,7 +265,7 @@ namespace Dangl.AspNetCore.FileHandling.Azure
             var blobReference = GetTimeStampedBlobReference(fileDate, container, fileName);
             try
             {
-                await blobReference.DeleteAsync();
+                await blobReference.DeleteAsync().ConfigureAwait(false);
                 return RepositoryResult.Success();
             }
             catch
@@ -319,7 +318,7 @@ namespace Dangl.AspNetCore.FileHandling.Azure
 
         private async Task<RepositoryResult<SasUploadLink>> GetSasUploadLinkInternalAsync(string filePath, string container, int validForMinutes)
         {
-            var sasUploadLink = await GeSasLinkInternalAsync(filePath, container, validForMinutes, BlobSasPermissions.Create | BlobSasPermissions.Write, null);
+            var sasUploadLink = await GeSasLinkInternalAsync(filePath, container, validForMinutes, BlobSasPermissions.Create | BlobSasPermissions.Write, null).ConfigureAwait(false);
             if (!sasUploadLink.IsSuccess)
             {
                 return RepositoryResult<SasUploadLink>.Fail(sasUploadLink.ErrorMessage);
@@ -379,7 +378,7 @@ namespace Dangl.AspNetCore.FileHandling.Azure
 
         private async Task<RepositoryResult<SasDownloadLink>> GetSasDownloadLinkInternalAsync(string filePath, string container, int validForMinutes, string friendlyFileName)
         {
-            var sasUploadLink = await GeSasLinkInternalAsync(filePath, container, validForMinutes, BlobSasPermissions.Read, friendlyFileName);
+            var sasUploadLink = await GeSasLinkInternalAsync(filePath, container, validForMinutes, BlobSasPermissions.Read, friendlyFileName).ConfigureAwait(false);
             if (!sasUploadLink.IsSuccess)
             {
                 return RepositoryResult<SasDownloadLink>.Fail(sasUploadLink.ErrorMessage);
@@ -494,7 +493,7 @@ namespace Dangl.AspNetCore.FileHandling.Azure
         {
             try
             {
-                var blobExists = await blobReference.ExistsAsync();
+                var blobExists = await blobReference.ExistsAsync().ConfigureAwait(false);
                 return RepositoryResult<bool>.Success(blobExists);
             }
             catch (Exception e)
@@ -548,7 +547,7 @@ namespace Dangl.AspNetCore.FileHandling.Azure
         {
             try
             {
-                var propertiesResponse = await blob.GetPropertiesAsync();
+                var propertiesResponse = await blob.GetPropertiesAsync().ConfigureAwait(false);
                 return propertiesResponse.Value;
             }
             catch (Exception e)
