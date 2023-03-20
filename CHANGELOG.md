@@ -2,6 +2,9 @@
 
 All notable changes to **Dangl.AspNetCore.FileHandling** are documented here.
 
+## v0.8.2:
+- Enabled `ConfigureAwait(false)` for all async tasks
+
 ## v0.8.1:
 - Added an overload to the constructor of `AzureBlobFileManager` back for binary compatibility with earlier versions
 
