@@ -101,7 +101,7 @@ namespace Dangl.AspNetCore.FileHandling
         {
             // Copying it internally because the original stream is likely to be disposed
             var copiedMemoryStream = new MemoryStream();
-            await fileStream.CopyToAsync(copiedMemoryStream);
+            await fileStream.CopyToAsync(copiedMemoryStream).ConfigureAwait(false);
             copiedMemoryStream.Position = 0;
 
             _savedFiles.Add(new InMemorySavedFile
@@ -127,7 +127,7 @@ namespace Dangl.AspNetCore.FileHandling
         {
             // Copying it internally because the original stream is likely to be disposed
             var copiedMemoryStream = new MemoryStream();
-            await fileStream.CopyToAsync(copiedMemoryStream);
+            await fileStream.CopyToAsync(copiedMemoryStream).ConfigureAwait(false);
             copiedMemoryStream.Position = 0;
 
             _savedFiles.Add(new InMemorySavedFile
