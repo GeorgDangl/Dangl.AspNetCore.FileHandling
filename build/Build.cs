@@ -53,8 +53,8 @@ class Build : NukeBuild
 
     [AzureKeyVaultSecret] private readonly string DocuBaseUrl;
     [AzureKeyVaultSecret] readonly string GitHubAuthenticationToken;
-    [AzureKeyVaultSecret] readonly string PublicMyGetSource;
-    [AzureKeyVaultSecret] readonly string PublicMyGetApiKey;
+    [AzureKeyVaultSecret] string DanglPublicFeedSource;
+    [AzureKeyVaultSecret] string FeedzAccessToken;
     [AzureKeyVaultSecret] readonly string NuGetApiKey;
     [AzureKeyVaultSecret("DanglAspNetCoreFileHandling-DocuApiKey")] readonly string DocuApiKey;
 
@@ -214,8 +214,8 @@ class Build : NukeBuild
 
     Target Push => _ => _
         .DependsOn(Pack)
-        .Requires(() => PublicMyGetSource)
-        .Requires(() => PublicMyGetApiKey)
+        .Requires(() => DanglPublicFeedSource)
+        .Requires(() => FeedzAccessToken)
         .Requires(() => NuGetApiKey)
         .Requires(() => Configuration.EqualsOrdinalIgnoreCase("Release"))
         .OnlyWhenDynamic(() => IsOnBranch("master") || IsOnBranch("develop"))
@@ -234,8 +234,8 @@ class Build : NukeBuild
                         // Need to set it here, otherwise it takes the one from NUKEs .tmp directory
                         .SetProcessToolPath(ToolPathResolver.GetPathExecutable("dotnet"))
                         .SetTargetPath(x)
-                        .SetSource(PublicMyGetSource)
-                        .SetApiKey(PublicMyGetApiKey));
+                        .SetSource(DanglPublicFeedSource)
+                        .SetApiKey(FeedzAccessToken));
 
                     if (GitVersion.BranchName.Equals("master") || GitVersion.BranchName.Equals("origin/master"))
                     {
