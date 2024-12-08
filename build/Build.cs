@@ -3,9 +3,6 @@ using Nuke.Common.Git;
 using Nuke.Common.IO;
 using Nuke.Common.ProjectModel;
 using Nuke.Common.Tooling;
-using Nuke.Common.Tools.AzureKeyVault;
-using Nuke.Common.Tools.AzureKeyVault.Attributes;
-using Nuke.Common.Tools.DocFX;
 using Nuke.Common.Tools.DotCover;
 using Nuke.Common.Tools.DotNet;
 using Nuke.Common.Tools.GitVersion;
@@ -25,13 +22,13 @@ using static Nuke.Common.ChangeLog.ChangelogTasks;
 using static Nuke.Common.IO.FileSystemTasks;
 using static Nuke.Common.IO.PathConstruction;
 using static Nuke.Common.IO.XmlTasks;
-using static Nuke.Common.Tools.DocFX.DocFXTasks;
 using static Nuke.Common.Tools.DotNet.DotNetTasks;
 using static Nuke.GitHub.ChangeLogExtensions;
 using static Nuke.GitHub.GitHubTasks;
 using static Nuke.WebDocu.WebDocuTasks;
 using static Nuke.Common.Tools.Docker.DockerTasks;
 using Nuke.Common.Tools.Docker;
+using Nuke.Common.Tools.AzureKeyVault;
 
 class Build : NukeBuild
 {
@@ -40,24 +37,26 @@ class Build : NukeBuild
     [Parameter] readonly string KeyVaultBaseUrl;
     [Parameter] readonly string KeyVaultClientId;
     [Parameter] readonly string KeyVaultClientSecret;
+    [Parameter] readonly string KeyVaultTenantId;
     [GitVersion(Framework = "net5.0")] readonly GitVersion GitVersion;
     [GitRepository] readonly GitRepository GitRepository;
-    [KeyVault] readonly KeyVault KeyVault;
+    [AzureKeyVault] readonly AzureKeyVault KeyVault;
 
-    [KeyVaultSettings(
+    [AzureKeyVaultConfiguration(
         BaseUrlParameterName = nameof(KeyVaultBaseUrl),
         ClientIdParameterName = nameof(KeyVaultClientId),
-        ClientSecretParameterName = nameof(KeyVaultClientSecret))]
-    private readonly KeyVaultSettings KeyVaultSettings;
+        ClientSecretParameterName = nameof(KeyVaultClientSecret),
+        TenantIdParameterName = nameof(KeyVaultTenantId))]
+    private readonly AzureKeyVaultConfiguration KeyVaultSettings;
 
     [Parameter] readonly string Configuration = IsLocalBuild ? "Debug" : "Release";
 
-    [KeyVaultSecret] private readonly string DocuBaseUrl;
-    [KeyVaultSecret] readonly string GitHubAuthenticationToken;
-    [KeyVaultSecret] readonly string PublicMyGetSource;
-    [KeyVaultSecret] readonly string PublicMyGetApiKey;
-    [KeyVaultSecret] readonly string NuGetApiKey;
-    [KeyVaultSecret("DanglAspNetCoreFileHandling-DocuApiKey")] readonly string DocuApiKey;
+    [AzureKeyVaultSecret] private readonly string DocuBaseUrl;
+    [AzureKeyVaultSecret] readonly string GitHubAuthenticationToken;
+    [AzureKeyVaultSecret] string DanglPublicFeedSource;
+    [AzureKeyVaultSecret] string FeedzAccessToken;
+    [AzureKeyVaultSecret] readonly string NuGetApiKey;
+    [AzureKeyVaultSecret("DanglAspNetCoreFileHandling-DocuApiKey")] readonly string DocuApiKey;
 
     [Solution("Dangl.AspNetCore.FileHandling.sln")] readonly Solution Solution;
     AbsolutePath SolutionDirectory => Solution.Directory;
@@ -70,9 +69,9 @@ class Build : NukeBuild
     Target Clean => _ => _
             .Executes(() =>
             {
-                GlobDirectories(SourceDirectory, "**/bin", "**/obj").ForEach(DeleteDirectory);
-                GlobDirectories(SolutionDirectory / "test", "**/bin", "**/obj").ForEach(DeleteDirectory);
-                EnsureCleanDirectory(OutputDirectory);
+                SourceDirectory.GlobDirectories("**/bin", "**/obj").ForEach(d => d.DeleteDirectory());
+                (SolutionDirectory / "test").GlobDirectories("**/bin", "**/obj").ForEach(d => d.DeleteDirectory());
+                OutputDirectory.CreateOrCleanDirectory();
             });
 
     Target Restore => _ => _
@@ -115,7 +114,7 @@ class Build : NukeBuild
         .DependsOn(Compile)
         .Executes(() =>
         {
-            var testProjects = GlobFiles(RootDirectory / "test", "**/*.csproj").ToList();
+            var testProjects = (RootDirectory / "test").GlobFiles("**/*.csproj").ToList();
             var dotnetPath = ToolPathResolver.GetPathExecutable("dotnet");
             var snapshotIndex = 0;
 
@@ -154,7 +153,7 @@ class Build : NukeBuild
 
     private void PrependFrameworkToTestresults()
     {
-        var testResults = GlobFiles(OutputDirectory, "*testresults*.xml").ToList();
+        var testResults = OutputDirectory.GlobFiles("*testresults*.xml").ToList();
         Serilog.Log.Information($"Found {testResults.Count} test result files on which to append the framework.");
         foreach (var testResultFile in testResults)
         {
@@ -201,7 +200,7 @@ class Build : NukeBuild
         }
 
         firstXdoc.Save(OutputDirectory / "testresults.xml");
-        testResults.ForEach(DeleteFile);
+        testResults.ForEach(f => f.DeleteFile());
     }
 
     private string GetFrameworkNameFromFilename(string filename)
@@ -215,14 +214,15 @@ class Build : NukeBuild
 
     Target Push => _ => _
         .DependsOn(Pack)
-        .Requires(() => PublicMyGetSource)
-        .Requires(() => PublicMyGetApiKey)
+        .Requires(() => DanglPublicFeedSource)
+        .Requires(() => FeedzAccessToken)
         .Requires(() => NuGetApiKey)
         .Requires(() => Configuration.EqualsOrdinalIgnoreCase("Release"))
         .OnlyWhenDynamic(() => IsOnBranch("master") || IsOnBranch("develop"))
         .Executes(() =>
         {
-            var packages = GlobFiles(OutputDirectory, "*.nupkg")
+            var packages = OutputDirectory.GlobFiles("*.nupkg")
+                .Select(f => f.ToString())
                 .Where(x => !x.EndsWith("symbols.nupkg"))
                 .ToList();
             Assert.NotEmpty(packages);
@@ -234,8 +234,8 @@ class Build : NukeBuild
                         // Need to set it here, otherwise it takes the one from NUKEs .tmp directory
                         .SetProcessToolPath(ToolPathResolver.GetPathExecutable("dotnet"))
                         .SetTargetPath(x)
-                        .SetSource(PublicMyGetSource)
-                        .SetApiKey(PublicMyGetApiKey));
+                        .SetSource(DanglPublicFeedSource)
+                        .SetApiKey(FeedzAccessToken));
 
                     if (GitVersion.BranchName.Equals("master") || GitVersion.BranchName.Equals("origin/master"))
                     {
@@ -254,9 +254,10 @@ class Build : NukeBuild
         .DependsOn(Restore)
         .Executes(() =>
         {
-            DocFXMetadata(x => x
-                .SetProcessEnvironmentVariable("DOCFX_SOURCE_BRANCH_NAME", GitVersion.BranchName)
-                .SetProjects(DocFxFile));
+            var environmentVariables = EnvironmentInfo.Variables.ToDictionary();
+            environmentVariables.Add("DOCFX_SOURCE_BRANCH_NAME", GitVersion.BranchName);
+            var docFxPath = NuGetToolPathResolver.GetPackageExecutable("docfx", "tools/net8.0/any/docfx.dll");
+            DotNet($"{docFxPath} metadata {DocFxFile}", environmentVariables: environmentVariables);
         });
 
     Target BuildDocumentation => _ => _
@@ -272,13 +273,13 @@ class Build : NukeBuild
 
             File.Copy(SolutionDirectory / "README.md", SolutionDirectory / "index.md");
 
-            DocFXBuild(x => x
-                .SetProcessEnvironmentVariable("DOCFX_SOURCE_BRANCH_NAME", GitVersion.BranchName)
-                .SetConfigFile(DocFxFile));
+            var environmentVariables = EnvironmentInfo.Variables.ToDictionary();
+            environmentVariables.Add("DOCFX_SOURCE_BRANCH_NAME", GitVersion.BranchName);
+            var docFxPath = NuGetToolPathResolver.GetPackageExecutable("docfx", "tools/net8.0/any/docfx.dll");
+            DotNet($"{docFxPath} {DocFxFile}", environmentVariables: environmentVariables);
 
             File.Delete(SolutionDirectory / "index.md");
             Directory.Delete(SolutionDirectory / "api", true);
-            Directory.Delete(SolutionDirectory / "obj", true);
         });
 
     Target UploadDocumentation => _ => _
@@ -314,11 +315,11 @@ class Build : NukeBuild
             var completeChangeLog = $"## {releaseTag}" + Environment.NewLine + latestChangeLog;
 
             var repositoryInfo = GetGitHubRepositoryInfo(GitRepository);
-            var nuGetPackages = GlobFiles(OutputDirectory, "*.nupkg").ToArray();
+            var nuGetPackages = OutputDirectory.GlobFiles("*.nupkg").ToArray();
             Assert.NotEmpty(nuGetPackages);
 
             PublishRelease(x => x
-                .SetArtifactPaths(nuGetPackages)
+                .SetArtifactPaths(nuGetPackages.Select(a => a.ToString()).ToArray())
                 .SetCommitSha(GitVersion.Sha)
                 .SetReleaseNotes(completeChangeLog)
                 .SetRepositoryName(repositoryInfo.repositoryName)
