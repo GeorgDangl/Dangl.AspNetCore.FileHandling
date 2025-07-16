@@ -2,6 +2,9 @@
 
 All notable changes to **Dangl.AspNetCore.FileHandling** are documented here.
 
+## v0.8.4:
+- Updated dependencies
+
 ## v0.8.3:
 - Updated dependencies
 
