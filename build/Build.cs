@@ -19,8 +19,6 @@ using System.Linq;
 using System.Xml.Linq;
 using System.Xml.XPath;
 using static Nuke.Common.ChangeLog.ChangelogTasks;
-using static Nuke.Common.IO.FileSystemTasks;
-using static Nuke.Common.IO.PathConstruction;
 using static Nuke.Common.IO.XmlTasks;
 using static Nuke.Common.Tools.DotNet.DotNetTasks;
 using static Nuke.GitHub.ChangeLogExtensions;
