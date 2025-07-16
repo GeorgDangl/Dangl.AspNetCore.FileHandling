@@ -44,6 +44,15 @@ namespace Dangl.AspNetCore.FileHandling.Azure.IntegrationTests
             {
                 Name = containerName,
                 Image = AZURITE_IMAGE,
+                Cmd = new List<string>
+                {
+                    "azurite",
+                    "--blobHost",
+                    "0.0.0.0",
+                    "--queueHost",
+                    "0.0.0.0",
+                    "--skipApiVersionCheck"
+                },
                 HostConfig = new HostConfig
                 {
                     PortBindings = new Dictionary<string, IList<PortBinding>>
