@@ -14,7 +14,7 @@
   <ItemGroup>
     <PackageReference Include="Dangl.Data.Shared" Version="2.5.2" />
     <PackageReference Include="Dangl.Common" Version="1.7.1" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.7" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.10" />
   </ItemGroup>
 
 </Project>
