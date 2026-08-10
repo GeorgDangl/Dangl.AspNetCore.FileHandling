@@ -1,16 +1,16 @@
-﻿using Nuke.Common;
-using Nuke.Common.Git;
-using Nuke.Common.IO;
-using Nuke.Common.ProjectModel;
-using Nuke.Common.Tooling;
-using Nuke.Common.Tools.DotCover;
-using Nuke.Common.Tools.DotNet;
-using Nuke.Common.Tools.GitVersion;
-using Nuke.Common.Tools.ReportGenerator;
-using Nuke.Common.Utilities;
-using Nuke.Common.Utilities.Collections;
-using Nuke.GitHub;
-using Nuke.WebDocu;
+using Fallout.Common;
+using Fallout.Common.Git;
+using Fallout.Common.IO;
+using Fallout.Common.ProjectModel;
+using Fallout.Common.Tooling;
+using Fallout.Common.Tools.DotCover;
+using Fallout.Common.Tools.DotNet;
+using Fallout.Common.Tools.GitVersion;
+using Fallout.Common.Tools.ReportGenerator;
+using Fallout.Common.Utilities;
+using Fallout.Common.Utilities.Collections;
+using Fallout.GitHub;
+using Fallout.WebDocu;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -18,17 +18,17 @@ using System.IO;
 using System.Linq;
 using System.Xml.Linq;
 using System.Xml.XPath;
-using static Nuke.Common.ChangeLog.ChangelogTasks;
-using static Nuke.Common.IO.XmlTasks;
-using static Nuke.Common.Tools.DotNet.DotNetTasks;
-using static Nuke.GitHub.ChangeLogExtensions;
-using static Nuke.GitHub.GitHubTasks;
-using static Nuke.WebDocu.WebDocuTasks;
-using static Nuke.Common.Tools.Docker.DockerTasks;
-using Nuke.Common.Tools.Docker;
-using Nuke.Common.Tools.AzureKeyVault;
+using static Fallout.Common.ChangeLog.ChangelogTasks;
+using static Fallout.Common.IO.XmlTasks;
+using static Fallout.Common.Tools.DotNet.DotNetTasks;
+using static Fallout.GitHub.ChangeLogExtensions;
+using static Fallout.GitHub.GitHubTasks;
+using static Fallout.WebDocu.WebDocuTasks;
+using static Fallout.Common.Tools.Docker.DockerTasks;
+using Fallout.Common.Tools.Docker;
+using Fallout.Common.Tools.AzureKeyVault;
 
-class Build : NukeBuild
+class Build : FalloutBuild
 {
     public static int Main() => Execute<Build>(x => x.Compile);
 
@@ -229,7 +229,7 @@ class Build : NukeBuild
                 .ForEach(x =>
                 {
                     DotNetNuGetPush(s => s
-                        // Need to set it here, otherwise it takes the one from NUKEs .tmp directory
+                        // Need to set it here, otherwise it takes the one from Fallouts .tmp directory
                         .SetProcessToolPath(ToolPathResolver.GetPathExecutable("dotnet"))
                         .SetTargetPath(x)
                         .SetSource(DanglPublicFeedSource)
@@ -239,7 +239,7 @@ class Build : NukeBuild
                     {
                         // Stable releases are published to NuGet
                         DotNetNuGetPush(s => s
-                            // Need to set it here, otherwise it takes the one from NUKEs .tmp directory
+                            // Need to set it here, otherwise it takes the one from Fallouts .tmp directory
                             .SetProcessToolPath(ToolPathResolver.GetPathExecutable("dotnet"))
                             .SetTargetPath(x)
                             .SetSource("https://api.nuget.org/v3/index.json")
