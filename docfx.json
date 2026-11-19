@@ -17,6 +17,25 @@
       "properties": {
         "TargetFramework": "netstandard2.0"
       }
+    },
+    {
+      "src": [
+        {
+          "src": "./src",
+          "files": [
+            "**/*.csproj"
+          ],
+          "exclude": [
+            "**/bin/**",
+            "**/obj/**"
+          ]
+        }
+      ],
+      "dest": "output/docs-markdown/api",
+      "properties": {
+        "TargetFramework": "netstandard2.0"
+      },
+      "outputFormat": "markdown"
     }
   ],
   "build": {
@@ -49,7 +68,7 @@
       "_enableSearch": true,
       "_gitUrlPattern": "github"
     },
-    "dest": "./output",
+    "dest": "./output/docs",
     "template": [
       "default",
       "docs/template"
